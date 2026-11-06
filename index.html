@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>By a Thread — get closer, don't touch</title>
+<meta name="description" content="A one-touch arcade game where points only come from near misses. Steer a needle past pins, get closer than you dare, and climb the daily and global leaderboards.">
+<link rel="canonical" href="https://byathread.app/">
+<meta name="theme-color" content="#1f3559">
+<meta name="color-scheme" content="dark">
+
+<!-- icons + install -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="By a Thread">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- link previews (WhatsApp, iMessage, Facebook, X, Discord...) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="By a Thread">
+<meta property="og:title" content="By a Thread — get closer, don't touch">
+<meta property="og:description" content="Points only for near misses. One finger, one needle, one more run.">
+<meta property="og:url" content="https://byathread.app/">
+<meta property="og:image" content="https://byathread.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="By a Thread: a needle trailing orange thread past coloured pins on denim">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="By a Thread — get closer, don't touch">
+<meta name="twitter:description" content="Points only for near misses. One finger, one needle, one more run.">
+<meta name="twitter:image" content="https://byathread.app/og.png">
+
+<link rel="preload" href="/fonts/bungee.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/dmsans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://lmxjieimbueowtcthfof.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<style>
+@font-face { font-family: "Bungee"; src: url(/fonts/bungee.woff2) format("woff2"); font-display: swap; }
+@font-face { font-family: "DM Sans"; src: url(/fonts/dmsans.woff2) format("woff2"); font-weight: 100 1000; font-display: swap; }
+.legal { margin-top: 6px; font: 600 12px var(--font-body); color: var(--muted); text-align: center; }
+.legal a { color: var(--muted); }
+</style>
+<style>
+/* Layout: one 9:16 sheet of fabric, centered; menus are stitched patches floating over it. Single denim look in both themes. */
+:root {
+  --denim: #1f3559;      /* page ground */
+  --denim-lit: #2e4c7d;
+  --thread: #f39a1d;     /* topstitch orange */
+  --gold: #ffd75e;
+  --teal: #6cc3b8;       /* 2x power-up */
+  --patch: #f6efe2;      /* canvas-cotton patch */
+  --patch-2: #ebe1cf;
+  --ink: #17233b;
+  --red: #d9483b;
+  --muted: #5d6b86;
+  --line: #c9b9a0;
+  --font-display: "Bungee", "Arial Black", Impact, sans-serif;
+  --font-body: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--denim); color: var(--patch); font-family: var(--font-body); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.stage { position: relative; height: min(100%, calc((100vw - 32px) * 16 / 9)); aspect-ratio: 9 / 16; max-width: 100%; padding-block: 8px; box-sizing: border-box; }
+canvas { display: block; width: 100%; height: 100%; border-radius: 16px; touch-action: none; cursor: pointer; }
+.overlay { position: absolute; inset: 8px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 14px; pointer-events: none; text-align: center; box-sizing: border-box; }
+.overlay > * { pointer-events: auto; }
+.patch { background: var(--patch); color: var(--ink); border-radius: 14px; padding: 18px 16px; width: min(320px, 100%); max-height: 100%; overflow-y: auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;
+  outline: 2px dashed var(--thread); outline-offset: -8px; box-shadow: 0 10px 0 rgba(0,0,0,.28); }
+.logo { font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1; margin: 0; color: var(--ink); text-wrap: balance; }
+.logo em { font-style: normal; color: var(--red); }
+.scores { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.scores div { background: var(--patch-2); border-radius: 10px; padding: 8px 4px; min-width: 0; }
+.scores small { display: block; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.scores strong { font-family: var(--font-display); font-weight: 400; font-size: 20px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.btn { font: 800 16px var(--font-body); padding: 13px; border-radius: 12px; border: 0; cursor: pointer; background: var(--red); color: #fff; box-shadow: 0 4px 0 #8e2a20; }
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #8e2a20; }
+.btn.alt { background: var(--denim-lit); box-shadow: 0 4px 0 #142440; }
+.btn small { display: block; font-weight: 600; font-size: 12px; opacity: .9; }
+.btn:focus-visible, .icon:focus-visible, .link:focus-visible, .nav button:focus-visible, .tab:focus-visible, .daily:focus-visible, .x:focus-visible, .sw:focus-visible, .mini:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.badge { align-self: center; background: var(--thread); color: var(--ink); font-family: var(--font-display); font-size: 14px; padding: 4px 12px; border-radius: 999px; transform: rotate(-3deg); }
+.ad { border: 2px dashed var(--line); border-radius: 12px; padding: 16px 10px; color: var(--muted); font-weight: 700; font-size: 13px; }
+.ad b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--ink); }
+.link { background: none; border: 0; font: 700 14px var(--font-body); color: var(--muted); text-decoration: underline; cursor: pointer; padding: 4px; }
+.icon { position: absolute; top: 16px; right: 10px; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(23,35,59,.6); color: var(--patch); font-size: 17px; cursor: pointer; }
+.row { display: flex; gap: 8px; }
+.row > * { flex: 1; min-width: 0; }
+.world { font-size: 14px; color: #34415c; display: flex; flex-direction: column; gap: 8px; }
+.world b { color: var(--ink); }
+.field { font: 700 16px var(--font-body); padding: 11px 12px; border-radius: 10px; border: 2px solid var(--line); background: #fff; color: var(--ink); width: 100%; box-sizing: border-box; user-select: text; -webkit-user-select: text; }
+.field:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+.err { color: var(--red); font-weight: 700; font-size: 13px; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+/* start menu */
+.play { font: 400 26px var(--font-display); padding: 14px 12px 12px; }
+.play small { font: 700 12px var(--font-body); margin-top: 2px; }
+.daily { text-align: left; background: #fff8e8; border: 2px solid var(--thread); border-radius: 12px; padding: 10px 12px; cursor: pointer; display: grid; gap: 6px; font: inherit; color: var(--ink); box-shadow: 0 4px 0 #d9c7a3; }
+.daily:active { transform: translateY(2px); box-shadow: 0 2px 0 #d9c7a3; }
+.daily .dt { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.daily .dt b { font-family: var(--font-display); font-weight: 400; font-size: 17px; }
+.daily .dt span { font-size: 12px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.chip { font: 800 11px var(--font-body); background: var(--ink); color: var(--patch); padding: 3px 8px; border-radius: 999px; }
+.daily .ds { font-size: 12px; color: var(--muted); font-weight: 700; }
+.nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.nav button { font: 800 13px var(--font-body); padding: 10px 4px; border-radius: 10px; border: 2px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; min-width: 0; }
+
+/* panels */
+.phead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.phead .logo { font-size: 24px; text-align: left; }
+.x { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: transparent; font: 800 17px var(--font-body); color: var(--ink); cursor: pointer; flex: 0 0 auto; line-height: 1; }
+.who { display: flex; align-items: center; gap: 12px; text-align: left; }
+.av { width: 46px; height: 46px; border-radius: 50%; flex: 0 0 auto; box-shadow: inset 0 0 0 3px rgba(0,0,0,.14); display: grid; place-items: center; font-family: var(--font-display); color: var(--ink); font-size: 18px; }
+.who b { font-size: 18px; display: block; overflow-wrap: anywhere; }
+.who span { font-size: 13px; color: var(--muted); }
+.swatches { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+.sw { width: 27px; height: 27px; border-radius: 50%; border: 3px solid var(--patch); cursor: pointer; box-shadow: 0 0 0 2px var(--line); padding: 0; }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink); }
+.code { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--patch-2); border-radius: 10px; padding: 8px 10px; text-align: left; }
+.code small { display: block; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.code strong { font-family: var(--font-display); font-weight: 400; font-size: 22px; letter-spacing: .12em; user-select: text; -webkit-user-select: text; }
+.mini { font: 800 13px var(--font-body); padding: 8px 10px; border-radius: 8px; border: 0; background: var(--ink); color: var(--patch); cursor: pointer; white-space: nowrap; }
+.mini.ghost { background: transparent; color: var(--muted); border: 2px solid var(--line); }
+.tabs { display: flex; gap: 6px; }
+.tab { flex: 1; font: 800 13px var(--font-body); padding: 8px 4px; border-radius: 999px; border: 2px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; min-width: 0; }
+.tab[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--patch); }
+.tabs.small .tab { font-size: 12px; padding: 6px 4px; }
+.list { list-style: none; margin: 0; padding: 0; max-height: 38vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.list li { display: grid; grid-template-columns: 34px 1fr auto 40px; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+.list li:nth-child(odd) { background: #efe6d6; }
+.list li.me { background: var(--thread); color: var(--ink); }
+.list .rk { font-family: var(--font-display); font-size: 14px; color: var(--muted); }
+.list li.me .rk { color: var(--ink); }
+.list .nm { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.list .sc { font-family: var(--font-display); font-size: 15px; }
+.list .mx { font-size: 12px; color: var(--muted); text-align: right; }
+.list.friends li { grid-template-columns: 1fr auto auto; }
+.list.friends .sub { font-size: 11px; color: var(--muted); font-weight: 700; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.list li.empty { display: block; }
+.empty { padding: 14px 8px; color: var(--muted); text-align: center; font-size: 14px; }
+.summary { font-size: 14px; color: #34415c; font-weight: 700; }
+.summary b { color: var(--ink); }
+.sso { display: flex; gap: 8px; }
+.sso button { flex: 1; min-width: 0; font: 800 15px var(--font-body); padding: 11px 8px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.sso .g { background: #ffffff; color: #1f1f1f; border: 2px solid var(--line); }
+.sso .f { background: #1877f2; color: #ffffff; border: 2px solid #1877f2; }
+.sso svg { width: 18px; height: 18px; flex: 0 0 auto; }
+
+/* how to play + daily intro */
+.howto { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; text-align: left; font-size: 15px; line-height: 1.35; color: #34415c; }
+.howto li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center; }
+.howto b { color: var(--ink); }
+.ic { width: 26px; height: 26px; display: grid; place-items: center; justify-self: center; font-family: var(--font-display); font-size: 12px; }
+.ic.hold { border-radius: 50%; border: 3px solid var(--ink); box-shadow: inset 0 0 0 4px var(--patch), inset 0 0 0 13px var(--gold); box-sizing: border-box; }
+.ic.pin { width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff 0 12%, var(--red) 13% 70%, #7a2a22 100%); }
+.ic.zone { border-radius: 50%; border: 2px dashed var(--thread); background: radial-gradient(circle, var(--red) 0 28%, transparent 30%); box-sizing: border-box; }
+.ic.mult { color: var(--thread); font-size: 22px; }
+.ic.sq { width: 22px; height: 22px; background: var(--teal); color: var(--ink); border-radius: 4px; transform: rotate(-8deg); font-size: 10px; }
+.quirk { text-align: left; background: var(--patch-2); border-radius: 10px; padding: 10px 12px; }
+.quirk b { font-family: var(--font-display); font-weight: 400; font-size: 15px; display: block; }
+.quirk span { font-size: 14px; color: #34415c; }
+
+.shimg { width: 100%; max-height: 46vh; object-fit: contain; border-radius: 10px; background: var(--patch-2); display: block; }
+.toggle { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; text-align: left; font-size: 13px; color: var(--muted); line-height: 1.4; cursor: pointer; }
+.toggle input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--ink); }
+.toggle b { display: block; color: var(--ink); font-size: 14px; }
+.toast { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--ink); color: var(--patch); padding: 10px 14px; border-radius: 999px; font-weight: 800; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 86%; text-align: center; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <canvas id="c" aria-label="By a Thread. Hold to steer right, release to drift left."></canvas>
+  <button class="icon" id="mute" aria-label="Sound on">🔊</button>
+
+  <!-- start menu -->
+  <div class="overlay" id="menu">
+    <div class="patch">
+      <h1 class="logo">By a <em>Thread</em></h1>
+      <button class="btn play" id="b-play">Play<small id="m-best">Endless · no best yet</small></button>
+      <button class="daily" id="b-daily">
+        <div class="dt"><b id="d-title">Daily</b><span id="d-clock"></span></div>
+        <div class="chips" id="d-chips"></div>
+        <div class="ds" id="d-stat"></div>
+      </button>
+      <div class="nav">
+        <button id="b-nav-lb">Leaderboard</button>
+        <button id="b-nav-friends">Friends</button>
+        <button id="b-nav-profile">Profile</button>
+      </div>
+      <button class="link" id="b-howto">How to play</button>
+      <div class="legal"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/delete-data">Delete data</a></div>
+    </div>
+  </div>
+
+  <!-- how to play -->
+  <div class="overlay" id="intro" hidden>
+    <div class="patch">
+      <h2 class="logo" style="font-size:26px">How to play</h2>
+      <ul class="howto">
+        <li><span class="ic hold" aria-hidden="true"></span><div><b>Hold</b> to steer right. <b>Let go</b> to drift left.</div></li>
+        <li><span class="ic pin" aria-hidden="true"></span><div><b>Don't touch</b> the pins or the stitched edges.</div></li>
+        <li><span class="ic zone" aria-hidden="true"></span><div><b>Pass close</b> to pins for points. The closer, the more.</div></li>
+        <li><span class="ic mult" aria-hidden="true">×</span><div>Close calls grow your <b>multiplier</b> and slow you down a little. Play it safe and the multiplier drains.</div></li>
+        <li><span class="ic sq" aria-hidden="true">2×</span><div>Grab squares for <b>double points</b>. They speed you up a little.</div></li>
+      </ul>
+      <button class="btn" id="b-ready">Ready</button>
+    </div>
+  </div>
+
+  <!-- daily intro -->
+  <div class="overlay" id="dintro" hidden>
+    <div class="patch">
+      <h2 class="logo" style="font-size:26px" id="di-title">Daily</h2>
+      <div class="note" id="di-sub">Same course for everyone today. Play as often as you like; your best run counts.</div>
+      <div id="di-quirks" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button class="btn" id="b-dready">Ready</button>
+      <button class="link" id="b-dback">Back</button>
+    </div>
+  </div>
+
+  <!-- profile -->
+  <div class="overlay" id="profile" hidden>
+    <div class="patch">
+      <div class="phead"><h2 class="logo">Profile</h2><button class="x" data-close aria-label="Close">×</button></div>
+      <div id="pf-body" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+  </div>
+
+  <!-- friends -->
+  <div class="overlay" id="friends" hidden>
+    <div class="patch">
+      <div class="phead"><h2 class="logo">Friends</h2><button class="x" data-close aria-label="Close">×</button></div>
+      <div id="fr-body" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+  </div>
+
+  <!-- leaderboards -->
+  <div class="overlay" id="lb" hidden>
+    <div class="patch">
+      <div class="phead"><h2 class="logo">Leaderboard</h2><button class="x" data-close aria-label="Close">×</button></div>
+      <div class="tabs" role="group" aria-label="Who">
+        <button class="tab" id="t-global" aria-pressed="true">Global</button>
+        <button class="tab" id="t-friends" aria-pressed="false">Friends</button>
+      </div>
+      <div class="tabs small" role="group" aria-label="Mode">
+        <button class="tab" id="t-endless" aria-pressed="true">Endless</button>
+        <button class="tab" id="t-daily" aria-pressed="false">Daily</button>
+      </div>
+      <div class="tabs small" role="group" aria-label="Period" id="t-periods">
+        <button class="tab" id="t-all" aria-pressed="true">All time</button>
+        <button class="tab" id="t-week" aria-pressed="false">This week</button>
+      </div>
+      <div class="note" id="lb-day"></div>
+      <div class="summary" id="lb-sum"></div>
+      <ol class="list" id="lb-list"></ol>
+      <div class="world" id="lb-auth"></div>
+    </div>
+  </div>
+
+  <!-- game over -->
+  <div class="overlay" id="over" hidden><div class="patch" id="over-card"></div></div>
+
+  <!-- share preview -->
+  <div class="overlay" id="sharebox" hidden>
+    <div class="patch">
+      <div class="phead"><h2 class="logo">Share</h2><button class="x" id="sh-close" aria-label="Close">×</button></div>
+      <img class="shimg" id="sh-img" alt="Score card to share">
+      <div class="note" id="sh-msg"></div>
+      <button class="btn" id="sh-share">Share</button>
+      <div class="row"><button class="btn alt" id="sh-save">Save image</button><button class="btn alt" id="sh-copy">Copy message</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+</div>
+<script>
+(() => {
+  const W = 360, H = 640, NY = 470;            // needle sits at this screen y; the fabric scrolls under it
+  const GRAZE = 18, NEEDLE_R = 0;              // only the centre point of the needle can touch anything
+  const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Number(n || 0).toLocaleString("en-US");
+  const store = {
+    get(k, f) { try { const v = localStorage.getItem("thread:" + k); return v == null ? f : JSON.parse(v); } catch (e) { return f; } },
+    set(k, v) { try { localStorage.setItem("thread:" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  // ---------- local stats (this device) ----------
+  const L = {
+    best: store.get("best", 0), runs: store.get("runs", 0), topMult: store.get("topMult", 1), hairs: store.get("hairs", 0),
+    bestDist: store.get("bestDist", 0), dailyBest: store.get("dailyBest", {}), dailyDist: store.get("dailyDist", {}), dailyDays: store.get("dailyDays", []),
+    save() { for (const k of ["best", "runs", "topMult", "hairs", "bestDist", "dailyBest", "dailyDist", "dailyDays"]) store.set(k, this[k]); },
+  };
+  let muted = store.get("muted", false);
+
+  // ---------- thread colours ----------
+  const COLORS = { orange: "#f39a1d", red: "#e5533f", pink: "#f07aa8", purple: "#a98be6", green: "#7cc56d", white: "#f6efe2", sky: "#6fb3f2", lime: "#c6e05a" };
+  const COLOR_NAMES = { orange: "Orange", red: "Red", pink: "Pink", purple: "Purple", green: "Green", white: "White", sky: "Sky", lime: "Lime" };
+  const colorHex = (c) => COLORS[c] || COLORS.orange;
+
+  // ---------- seeded randomness ----------
+  function hashStr(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function mulberry32(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  // ---------- daily mode ----------
+  // Same course for everyone each UTC day, plus two quirks and a fabric colourway chosen by the date.
+  const DAY0 = Date.UTC(2026, 10, 6);
+  const todayKey = () => new Date().toISOString().slice(0, 10);
+  const yesterdayKey = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  const dayNo = (k) => Math.round((Date.parse(k + "T00:00:00Z") - DAY0) / 864e5) + 1;
+  const FABRICS = [
+    { name: "Indigo denim", base: "#2e4c7d", out: "#18294a" },
+    { name: "Black denim", base: "#3b3f4a", out: "#1c1e24" },
+    { name: "Rust corduroy", base: "#8a4a2f", out: "#4a2517" },
+    { name: "Olive canvas", base: "#596b39", out: "#2c3620" },
+    { name: "Chambray", base: "#5a83b2", out: "#2a4363" },
+    { name: "Plum wool", base: "#5e3a68", out: "#2f1d36" },
+  ];
+  const baseMods = () => ({ steerAcc: 1150, steerMax: 235, invert: false, goldRate: 0.07, halfMul: 1, moveFrom: 2600, moveRate: 0.35,
+    pupFrom: 900, pupGap: 1700, pupChance: 0.18, pinScale: 1, wind: 0, startV: 170, night: false, fabric: FABRICS[0] });
+  const QUIRKS = [
+    { id: "night", name: "Night Shift", desc: () => "Only the fabric around your needle is lit.", apply: (m) => { m.night = true; } },
+    { id: "mirror", name: "Mirror Stitch", desc: () => "Controls are flipped: hold to steer left, let go to drift right.", apply: (m) => { m.invert = true; } },
+    { id: "heavy", group: "steer", name: "Heavy Thread", desc: () => "Steering is slow to respond.", apply: (m) => { m.steerAcc *= 0.62; m.steerMax *= 0.85; } },
+    { id: "twitchy", group: "steer", name: "Twitchy Needle", desc: () => "Steering is extra sharp.", apply: (m) => { m.steerAcc *= 1.5; m.steerMax *= 1.15; } },
+    { id: "wind", group: "steer", name: "Crosswind", desc: (m) => `A steady wind pushes you to the ${m.wind < 0 ? "left" : "right"}.`, apply: (m, r) => { m.wind = (r() < 0.5 ? -1 : 1) * 260; } },
+    { id: "gold", name: "Gold Rush", desc: () => "Gold pins everywhere. Each one pays triple.", apply: (m) => { m.goldRate = 0.3; } },
+    { id: "tight", name: "Tight Seams", desc: () => "The fabric is narrower than usual.", apply: (m) => { m.halfMul = 0.86; } },
+    { id: "restless", name: "Restless Pins", desc: () => "Pins slide sideways from the very start.", apply: (m) => { m.moveFrom = 400; m.moveRate = 0.6; } },
+    { id: "power", name: "Power Hour", desc: () => "2× squares show up three times as often.", apply: (m) => { m.pupFrom = 500; m.pupGap = 600; m.pupChance = 0.45; } },
+    { id: "big", group: "size", name: "Big Buttons", desc: () => "Pins are bigger.", apply: (m) => { m.pinScale = 1.35; } },
+    { id: "tiny", group: "size", name: "Pinheads", desc: () => "Pins are tiny, so close calls are harder to judge.", apply: (m) => { m.pinScale = 0.7; } },
+    { id: "fast", name: "Fast Start", desc: () => "You start at a higher speed.", apply: (m) => { m.startV = 245; } },
+  ];
+  function makeDaily(key) {
+    const r = mulberry32(hashStr("bythread-quirks-" + key));
+    const pool = QUIRKS.slice(), picks = [];
+    while (picks.length < 2 && pool.length) {
+      const q = pool.splice(Math.floor(r() * pool.length), 1)[0];
+      if (q.group && picks.some((p) => p.group === q.group)) continue;
+      picks.push(q);
+    }
+    const m = baseMods();
+    picks.forEach((q) => q.apply(m, r));
+    m.fabric = FABRICS[Math.floor(r() * FABRICS.length)];
+    return { key, no: dayNo(key), mods: m, seed: hashStr("bythread-course-" + key), quirks: picks.map((q) => ({ name: q.name, desc: q.desc(m) })) };
+  }
+  function msToMidnightUTC() { const n = new Date(); return Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1) - n.getTime(); }
+  function hm(ms) { const m = Math.max(0, Math.floor(ms / 60000)); return `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`; }
+  function localStreak() {
+    const days = new Set(L.dailyDays); let d = new Date(todayKey() + "T00:00:00Z"), n = 0;
+    if (!days.has(todayKey())) d = new Date(d.getTime() - 864e5);
+    while (days.has(d.toISOString().slice(0, 10))) { n++; d = new Date(d.getTime() - 864e5); }
+    return n;
+  }
+
+  // ---------- accounts, boards and friends ----------
+  // On the game's own site everything runs on Supabase with Google or Facebook sign-in. Inside the Claude
+  // preview the page can't reach other servers, so it falls back to the artifact's own store (no friends there).
+  const SB_URL = "https://lmxjieimbueowtcthfof.supabase.co";
+  const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxteGppZWltYnVlb3d0Y3RoZm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxMDMzMDAsImV4cCI6MjEwNzY3OTMwMH0.HlBKyHjj-Prb77-vUrMIdHuyiPo0rg5jExBEaJIhA4I"; // public anon key
+  const NAME_RE = /^[\p{L}\p{N} _.\-]{2,16}$/u;
+  const cleanName = (n) => String(n || "").replace(/\s+/g, " ").trim();
+
+  const Board = {
+    mode: "loading", db: null, uid: null, sb: null, session: null, prof: null,
+    name: store.get("name", ""), color: store.get("color", "orange"), code: null,
+    best: { endless: 0, daily: 0 }, dailyKey: todayKey(), rows: {},
+    async init() {
+      if (window.claude && typeof window.claude.use === "function") {
+        try {
+          const db = await window.claude.use("db"), user = await window.claude.use("user");
+          const uid = user ? await user.id() : null;
+          if (db && uid) {
+            this.mode = "claude"; this.db = db; this.uid = uid;
+            const me = await db.collection("scores").doc(uid).get();
+            if (me.exists) {
+              const d = me.data();
+              this.name = d.name || this.name; if (d.color) this.color = d.color;
+              this.best.endless = d.score || 0;
+              if (d.dailyDay === todayKey()) this.best.daily = d.dailyScore || 0;
+            }
+            return;
+          }
+        } catch (e) {}
+        this.mode = "off"; return;
+      }
+      try {
+        await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js");
+        this.sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true } });
+        const { data } = await this.sb.auth.getSession();
+        this.mode = "supabase";
+        await this.setSession(data.session);
+        this.sb.auth.onAuthStateChange((_e, session) => {
+          if ((this.session && this.session.user.id) === (session && session.user.id)) { this.session = session; return; }
+          this.setSession(session).then(onAuthChanged);
+        });
+        if (/[?&]code=|access_token=/.test(location.href)) history.replaceState(null, "", location.pathname);
+      } catch (e) { this.mode = "off"; }
+    },
+    async setSession(session) {
+      this.session = session;
+      if (!session) { this.prof = null; this.code = null; this.best = { endless: 0, daily: 0 }; return; }
+      await this.refreshProfile();
+    },
+    async refreshProfile() {
+      if (this.mode !== "supabase" || !this.session) return;
+      try {
+        const p = await this.call("profile");
+        this.prof = p || {};
+        this.name = (p && p.name) || "";
+        this.code = (p && p.code) || null;
+        if (p && p.color) { this.color = p.color; store.set("color", p.color); }
+        this.best.endless = (p && p.best) || 0;
+        this.best.daily = (p && p.daily_today) || 0; this.dailyKey = todayKey();
+      } catch (e) {}
+    },
+    ready() { return this.mode === "claude" || this.mode === "supabase"; },
+    signedIn() { return this.mode === "claude" || !!this.session; },
+    named() { return NAME_RE.test(this.name || ""); },
+    friendsOK() { return this.mode === "supabase" && !!this.session; },
+    dailyBest() { if (this.dailyKey !== todayKey()) { this.dailyKey = todayKey(); this.best.daily = 0; } return this.best.daily; },
+    suggestedName() {
+      const md = (this.session && this.session.user.user_metadata) || {};
+      return cleanName(String(md.full_name || md.name || "").split(" ")[0]).slice(0, 16);
+    },
+    async signIn(provider) {
+      store.set("signingIn", { provider, at: Date.now() });
+      const { error } = await this.sb.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin + location.pathname } });
+      if (error) throw error;
+    },
+    async signOut() { if (this.sb) await this.sb.auth.signOut(); },
+    async call(fn, args) {
+      const { data, error } = await this.sb.rpc(fn, args || {});
+      if (error) throw new Error(error.message || "The game server did not answer. Try again in a moment.");
+      return data;
+    },
+    key: (scope, mode, period) => `${scope}:${mode}:${mode === "daily" ? (period === "yesterday" ? "yesterday" : "today") : period}`,
+    apiPeriod: (mode, period) => mode === "daily" ? (period === "yesterday" ? "yesterday" : "all") : period,
+    async claudeRows(mode, period) {
+      const snap = await this.db.collection("scores").limit(500).get();
+      const cutoff = Date.now() - 7 * 864e5, today = todayKey();
+      let list = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+      if (mode === "daily") {
+        const day = period === "yesterday" ? yesterdayKey() : today;
+        list = list.map((r) => r.dailyDay === day ? Object.assign(r, { score: r.dailyScore, topMult: r.dailyMult })
+          : r.prevDay === day ? Object.assign(r, { score: r.prevScore, topMult: r.prevMult }) : null).filter((r) => r && r.score > 0);
+      }
+      else list = list.filter((r) => r.score > 0 && (period !== "week" || (r.at || 0) > cutoff));
+      list.sort((a, b) => b.score - a.score);
+      let rank = 0, prev = null;
+      return list.map((r, i) => { if (r.score !== prev) rank = i + 1; prev = r.score; return { rank, id: r.id, name: r.name || "Player", color: r.color || "orange", score: r.score, mult: r.topMult || 1, me: r.id === this.uid }; });
+    },
+    async top(scope, mode, period) {
+      let rows = null;
+      if (this.mode === "supabase") {
+        if (scope === "friends" && !this.session) return null;
+        const data = await this.call("board", { p_scope: scope, p_mode: mode, p_period: this.apiPeriod(mode, period), p_limit: 50 });
+        rows = (data || []).map((r) => ({ rank: r.rank, name: r.name, color: r.color, score: r.score, mult: r.top_mult, me: !!r.is_me }));
+      } else if (this.mode === "claude") {
+        if (scope === "friends") return null;
+        rows = (await this.claudeRows(mode, period)).slice(0, 50);
+      }
+      this.rows[this.key(scope, mode, period)] = rows;
+      return rows;
+    },
+    async mine(scope, mode, period) {
+      if (this.mode === "supabase") return this.session ? await this.call("board_me", { p_scope: scope, p_mode: mode, p_period: this.apiPeriod(mode, period) }) : null;
+      if (this.mode === "claude" && scope === "global") {
+        const list = await this.claudeRows(mode, period), me = list.find((r) => r.me);
+        return { best: me ? me.score : null, rank: me ? me.rank : null, players: list.length };
+      }
+      return null;
+    },
+    async claudeDoc() { const ref = this.db.collection("scores").doc(this.uid); const cur = await ref.get(); return { ref, data: cur.exists ? cur.data() : null }; },
+    async setName(n) {
+      if (this.mode === "supabase") await this.call("set_name", { p_name: n });
+      else if (this.mode === "claude") { const { ref, data } = await this.claudeDoc(); await ref.set(Object.assign({}, data || {}, { name: n, color: this.color })); }
+      const localColor = this.color;
+      this.name = n; store.set("name", n);
+      if (this.mode === "supabase") {
+        await this.refreshProfile();   // a brand-new profile starts orange: carry over the colour picked as a guest
+        if (localColor !== this.color && this.prof && this.prof.color === "orange") await this.setColor(localColor).catch(() => {});
+      }
+    },
+    async setColor(c) {
+      this.color = c; store.set("color", c);
+      if (this.mode === "supabase" && this.session && this.named()) await this.call("set_color", { p_color: c });
+      else if (this.mode === "claude") { const { ref, data } = await this.claudeDoc(); if (data) await ref.set(Object.assign({}, data, { color: c })); }
+    },
+    async submit(run) {
+      let res;
+      if (this.mode === "supabase") {
+        res = await this.call("post_run", { p_mode: run.mode, p_day: run.mode === "daily" ? run.day : null, p_score: run.score, p_distance: run.distance,
+          p_close: run.close, p_mult: run.mult, p_ms: run.ms, p_hairs: run.hairs });
+      } else if (this.mode === "claude") {
+        const { ref, data } = await this.claudeDoc(), d = Object.assign({ name: this.name, color: this.color }, data || {});
+        if (run.mode === "daily") {
+          if (d.dailyDay && d.dailyDay !== run.day) Object.assign(d, { prevDay: d.dailyDay, prevScore: d.dailyScore, prevMult: d.dailyMult });   // keep yesterday's board
+          if (d.dailyDay !== run.day || run.score > (d.dailyScore || 0)) Object.assign(d, { dailyDay: run.day, dailyScore: run.score, dailyMult: run.mult });
+        }
+        else if (run.score > (d.score || 0)) Object.assign(d, { score: run.score, topMult: run.mult, closeCalls: run.close, at: Date.now() });
+        await ref.set(d);
+        res = { global: await this.mine("global", run.mode, "all"), friends: null };
+      } else throw new Error("The leaderboard is not available here.");
+      if (run.mode === "daily") { if (run.day === todayKey()) this.best.daily = Math.max(this.dailyBest(), run.score); }
+      else this.best.endless = Math.max(this.best.endless, run.score);
+      return res;
+    },
+    addFriend(code) { return this.call("add_friend", { p_code: code }); },
+    removeFriend(code) { return this.call("remove_friend", { p_code: code }); },
+    async friends() { return (await this.call("friends")) || []; },
+  };
+  function loadScript(src) {
+    return new Promise((ok, fail) => { const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = () => fail(new Error("Could not load " + src)); document.head.appendChild(el); });
+  }
+  // ---------- anonymous analytics ----------
+  // A random id kept on this device (renewed every ~13 months), never linked to an account. Only sent from the
+  // game's own site; players can switch it off in Profile.
+  const IID_MAX_AGE = 395 * 864e5;
+  function uuid() { return crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => { const r = (Math.random() * 16) | 0; return (c === "x" ? r : (r & 3) | 8).toString(16); }); }
+  function installId() { let r = store.get("iid", null); if (!r || !r.id || Date.now() - r.at > IID_MAX_AGE) { r = { id: uuid(), at: Date.now() }; store.set("iid", r); } return r.id; }
+  const analyticsOn = () => store.get("analytics", true) !== false;
+  let analyticsQueue = [];
+  function sendEvent(args) { try { Board.sb.rpc("log_event", args).then(() => {}, () => {}); } catch (e) {} }
+  function track(event, p = {}) {
+    if (!analyticsOn()) return;
+    const args = { p_install: installId(), p_event: event, p_mode: p.mode || null, p_score: p.score == null ? null : Math.round(p.score),
+      p_duration_ms: p.ms == null ? null : Math.round(p.ms), p_close: p.close == null ? null : p.close, p_detail: p.detail || null };
+    if (Board.mode === "loading") { if (analyticsQueue.length < 50) analyticsQueue.push(args); return; }
+    if (Board.mode === "supabase") sendEvent(args);
+  }
+  function flushAnalytics() { const q = analyticsQueue; analyticsQueue = []; if (Board.mode === "supabase" && analyticsOn()) q.forEach(sendEvent); }
+
+  const myColor = () => Board.color || "orange";
+  const SITE_URL = "https://byathread.app";
+  // a run waiting to be posted survives the trip to Google/Facebook and back
+  const PENDING_MAX_AGE = 30 * 60 * 1000;
+  function setPending(run) { store.set("pending", run ? { run, at: Date.now() } : null); }
+  function getPending() { const p = store.get("pending", null); return p && Date.now() - p.at < PENDING_MAX_AGE ? p.run : null; }
+
+  // the next score to beat: your friends first, then the world
+  function rivalFor(sc) {
+    const pick = (rows) => { let r = null; if (rows) for (const row of rows) if (!row.me && row.score > sc && (!r || row.score < r.score)) r = row; return r; };
+    const f = pick(Board.rows[Board.key("friends", gameMode, "all")]);
+    if (f) return Object.assign({ friend: true }, f);
+    return pick(Board.rows[Board.key("global", gameMode, "all")]);
+  }
+  function refreshRivals() {
+    if (!Board.ready()) return;
+    Board.top("global", gameMode, "all").catch(() => {});
+    if (Board.friendsOK()) Board.top("friends", gameMode, "all").catch(() => {});
+  }
+
+  // ---------- canvas ----------
+  function fit() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+    ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  }
+  new ResizeObserver(fit).observe(cv);
+
+  // ---------- sound ----------
+  let ac = null;
+  function tone(f, dur, type = "triangle", vol = 0.05, f2) {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain(), t0 = ac.currentTime;
+      o.type = type; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+      g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + dur);
+    } catch (e) {}
+  }
+  const note = (m) => 392 * Math.pow(2, Math.min(m, 12) * 2 / 12);   // pitch climbs with the multiplier
+  function buzz(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} }
+
+  // ---------- fabric texture ----------
+  const twillCache = {};
+  function twillFor(base) {
+    if (twillCache[base]) return twillCache[base];
+    const tex = document.createElement("canvas"); tex.width = 48; tex.height = 48;
+    const g = tex.getContext("2d"); g.fillStyle = base; g.fillRect(0, 0, 48, 48);
+    g.strokeStyle = "rgba(255,255,255,.07)"; g.lineWidth = 2; for (let i = -48; i < 96; i += 6) { g.beginPath(); g.moveTo(i, 48); g.lineTo(i + 48, 0); g.stroke(); }
+    g.strokeStyle = "rgba(0,0,0,.08)"; g.lineWidth = 1; for (let i = -48; i < 96; i += 6) { g.beginPath(); g.moveTo(i + 3, 48); g.lineTo(i + 51, 0); g.stroke(); }
+    return (twillCache[base] = ctx.createPattern(tex, "repeat"));
+  }
+
+  // ---------- run state ----------
+  let state = "menu", holding = false, t = 0, playMs = 0, lastRun = null;
+  let gameMode = "endless", daily = null, mods = baseMods(), R = Math.random;
+  let lastGx = W / 2, lastRowY = 0, nd, pins, nextRow, trail, sparks, popups, score, grazePts, mult, grace, closeCalls, hairs, runTopMult, edgeTick, phase1, phase2, deadAt, revived, shake;
+
+  // forward speed follows a ramp clock; a close call (BY A THREAD / BY A HAIR) winds the clock back 8 seconds,
+  // so the speed drops and climbs back at the same rate it originally took to get there
+  const BASE_V = 170, MAX_V = 330, BOOST_V = 1.1;
+  const RAMP_MAX = Math.log(MAX_V / BASE_V) / 0.018;   // ~36.8 s from start to top speed
+  let rampT = 0, vNow = BASE_V, boostT = 0, boostDur = 0, pups = [], lastPupY = 0;
+  const rampSpeed = () => Math.min(BASE_V * Math.exp(0.018 * rampT), MAX_V);
+  const speed = () => vNow;
+
+  function reset() {
+    nd = { x: W / 2, y: 0, vx: 0 };
+    pins = []; nextRow = 260; lastGx = W / 2; lastRowY = 0; trail = []; sparks = []; popups = [];
+    rampT = Math.log(Math.max(mods.startV, BASE_V) / BASE_V) / 0.018; vNow = Math.max(mods.startV, BASE_V);
+    boostT = 0; boostDur = 0; pups = []; lastPupY = 0;
+    playMs = 0; score = 0; grazePts = 0; mult = 1; grace = 0; closeCalls = 0; hairs = 0; runTopMult = 1; edgeTick = 0; revived = false; shake = 0;
+    phase1 = R() * 6.28; phase2 = R() * 6.28;
+  }
+  // corridor of fabric between two seams, winding and narrowing with distance;
+  // both seams always stay on screen: the corridor may only wander as far as its width allows
+  const WALL_MARGIN = 18;
+  const half = (y) => Math.max(92, 150 - y * 0.0022) * mods.halfMul;
+  const center = (y) => {
+    const off = 44 * Math.sin(y * 0.0042 + phase1) + 22 * Math.sin(y * 0.011 + phase2);   // range ±66
+    const room = Math.max(0, W / 2 - WALL_MARGIN - half(y));
+    return W / 2 + off * Math.min(1, room / 66);
+  };
+
+  function spawnRow(y) {
+    const c = center(y), hw = half(y) - 8;
+    const gapW = Math.max(62, 104 - y * 0.0012);
+    // fairness: the open gap never jumps further sideways than the needle can travel before it arrives
+    const estV = Math.min(Math.max(mods.startV, 170 + y * 0.018), MAX_V) * BOOST_V;
+    const reach = mods.steerMax * Math.min(1, mods.steerAcc / 1150) * ((y - lastRowY) / estV) * 0.7;
+    const lo = Math.max(c - hw + gapW / 2, lastGx - reach), hi = Math.min(c + hw - gapW / 2, lastGx + reach);
+    const gx = lo < hi ? lo + R() * (hi - lo) : Math.max(c - hw + gapW / 2, Math.min(c + hw - gapW / 2, lastGx));
+    lastGx = gx; lastRowY = y;
+    const count = 1 + Math.floor(R() * (y > 1500 ? 3 : 2));
+    const placed = [];
+    for (let i = 0; i < count * 4 && placed.length < count; i++) {
+      const r = (9 + R() * 6) * mods.pinScale;
+      const x = c - hw + r + R() * (hw * 2 - r * 2);
+      if (Math.abs(x - gx) < gapW / 2 + r) continue;
+      if (placed.some((p) => Math.abs(p.x - x) < p.r + r + 26)) continue;
+      placed.push({ x, bx: x, y: y + (R() - 0.5) * 30, r, gold: R() < mods.goldRate, move: y > mods.moveFrom && R() < mods.moveRate ? 22 + R() * 20 : 0, ph: R() * 6.28,
+        minD: Infinity, paid: false, head: ["#d9483b", "#f6efe2", "#ffd75e", "#8a6fc9"][Math.floor(R() * 4)] });
+    }
+    pins.push(...placed);
+    if (y > mods.pupFrom && y - lastPupY > mods.pupGap && R() < mods.pupChance) {
+      lastPupY = y;
+      pups.push({ x: gx, y, dur: R() < 0.4 ? 7 : 5, taken: false, rot: R() * 6.28 });
+    }
+  }
+
+  // every run opens the same way: needle near one seam, already drifting toward the other,
+  // so the first move is always "hold" (to steer right, or left on a Mirror Stitch day)
+  function placeAtStart(y) {
+    const s = mods.invert ? -1 : 1;
+    nd.x = center(y) + s * half(y) * 0.55; nd.vx = -s * 140; holding = false;
+  }
+  function hideAll() { for (const id of ["menu", "intro", "dintro", "profile", "friends", "lb", "over", "sharebox"]) $(id).hidden = true; }
+  function start(mode) {
+    gameMode = mode || gameMode;
+    if (gameMode === "daily") { daily = makeDaily(todayKey()); mods = daily.mods; R = mulberry32(daily.seed); }
+    else { daily = null; mods = baseMods(); R = Math.random; }
+    reset(); placeAtStart(0); state = "play";
+    refreshRivals();
+    hideAll();
+    track("game_start", { mode: gameMode });
+  }
+  function toMenu() {
+    state = "menu"; gameMode = "endless"; daily = null; mods = baseMods(); R = Math.random; reset();
+    hideAll(); $("menu").hidden = false; renderMenu();
+  }
+
+  function award(p) {
+    if (p.paid || p.minD === Infinity) return;
+    p.paid = true;
+    const d = p.minD;
+    const tier = d < 2 ? { base: 100, label: "BY A HAIR" } : d < 5 ? { base: 50, label: "BY A THREAD" } : d < 10 ? { base: 20, label: "CLOSE" } : { base: 10, label: "GRAZE" };
+    const base = tier.base * (p.gold ? 3 : 1);
+    mult = Math.min(mult + 1, 12); runTopMult = Math.max(runTopMult, mult);
+    grace = 2.6; closeCalls++; if (d < 2) hairs++;
+    const pts = Math.round(base * mult * (boostT > 0 ? 2 : 1)); grazePts += pts;
+    popups.push({ x: p.x, y: p.y + 26, text: `${tier.label} +${fmt(pts)}`, life: 0.9, big: d < 5, gold: p.gold });
+    tone(note(mult), 0.12, "square", 0.045);
+    // a close call rewinds the speed ramp by 8 seconds
+    if (d < 5) { rampT = Math.max(0, rampT - 8); buzz(25); tone(note(mult) * 1.5, 0.18, "triangle", 0.05); }
+    for (let i = 0; i < (d < 2 ? 22 : d < 5 ? 14 : 6); i++) sparks.push({ x: nd.x, y: nd.y, vx: (Math.random() - 0.5) * 240, vy: (Math.random() - 0.5) * 240, life: 0.45, c: p.gold ? "#ffd75e" : colorHex(myColor()) });
+  }
+
+  function die(cause) {
+    if (state !== "play") return;
+    state = "dead"; deadAt = performance.now(); shake = 0.4; buzz(80);
+    tone(300, 0.4, "sawtooth", 0.07, 50);
+    for (let i = 0; i < 18; i++) sparks.push({ x: nd.x, y: nd.y, vx: (Math.random() - 0.5) * 320, vy: (Math.random() - 0.5) * 320, life: 0.8, c: i % 2 ? "#f6efe2" : colorHex(myColor()) });
+    const day = daily ? daily.key : null;
+    lastRun = { mode: gameMode, day, score, distance: Math.round(nd.y), close: closeCalls, mult: runTopMult, hairs, ms: Math.round(playMs),
+      trail: trail.map((p) => [p.x, p.y]) };
+    // local stats
+    L.runs++; L.topMult = Math.max(L.topMult, runTopMult); L.hairs += hairs;
+    let newBest;
+    if (gameMode === "daily") {
+      newBest = score > (L.dailyBest[day] || 0);
+      if (newBest) L.dailyBest[day] = score;
+      if (nd.y > (L.dailyDist[day] || 0)) L.dailyDist[day] = nd.y;
+      if (!L.dailyDays.includes(day)) L.dailyDays = L.dailyDays.concat(day).slice(-400);
+      for (const k of Object.keys(L.dailyBest)) if (k < day && L.dailyDays.indexOf(k) < L.dailyDays.length - 60) { delete L.dailyBest[k]; delete L.dailyDist[k]; }
+    } else {
+      newBest = score > L.best; if (newBest) L.best = score;
+      if (nd.y > L.bestDist) L.bestDist = nd.y;
+    }
+    L.save();
+    track("run_end", { mode: gameMode, score, ms: playMs, close: closeCalls, detail: cause });
+    setTimeout(() => showOver(newBest), 650);
+  }
+
+  function revive() {
+    revived = true;
+    track("ad_shown", { mode: gameMode, detail: "rewarded" });
+    pins = pins.filter((p) => p.y < nd.y - 30 || p.y > nd.y + 260);
+    placeAtStart(nd.y); rampT = 0; vNow = BASE_V; state = "play";
+    $("over").hidden = true;
+  }
+
+  // ---------- update ----------
+  function update(dt) {
+    t += dt;
+    if (state === "menu") { nd.y += 40 * dt; nd.x = center(nd.y) + Math.sin(t * 2) * 30; }
+    if (state === "play") {
+      rampT = Math.min(rampT + dt, RAMP_MAX);   // the clock stops at top speed, so a rewind always slows you
+      boostT = Math.max(0, boostT - dt);
+      const target = rampSpeed() * (boostT > 0 ? BOOST_V : 1);
+      vNow = vNow > target ? Math.max(target, vNow - 900 * dt) : target;   // quick ease down, then follow the ramp
+      playMs += dt * 1000;
+      const runT = playMs / 1000;
+      const dir = (holding ? 1 : -1) * (mods.invert ? -1 : 1);
+      nd.vx += (dir * mods.steerAcc + mods.wind) * dt;
+      nd.vx = Math.max(-mods.steerMax, Math.min(mods.steerMax, nd.vx));
+      nd.x += nd.vx * dt; nd.y += vNow * dt;
+
+      // seams
+      const c = center(nd.y), hw = half(nd.y);
+      const edgeD = Math.min(nd.x - (c - hw), (c + hw) - nd.x) - NEEDLE_R;
+      if (edgeD < 0) return die("seam");
+      if (edgeD < GRAZE * 0.8) {             // riding the seam keeps the multiplier alive and trickles points
+        edgeTick += dt; grace = Math.max(grace, 0.6);
+        if (edgeTick > 0.2) { edgeTick = 0; grazePts += 2 * mult * (boostT > 0 ? 2 : 1); sparks.push({ x: nd.x, y: nd.y, vx: (Math.random() - 0.5) * 80, vy: -40, life: 0.3, c: "#f39a1d" }); }
+      }
+
+      // pins (row spacing depends only on the row's position, so the daily course is identical for everyone)
+      while (nextRow < nd.y + H) { spawnRow(nextRow); nextRow += Math.max(92, 150 - Math.max(0, nextRow - H) * 0.004) + R() * 40; }
+      for (const p of pins) {
+        if (p.move) p.x = p.bx + Math.sin(runT * 2.1 + p.ph) * p.move;
+        const d = Math.hypot(nd.x - p.x, nd.y - p.y) - p.r - NEEDLE_R;
+        if (d < 0) return die("pin");
+        if (d < GRAZE) p.minD = Math.min(p.minD, d);
+        else if (p.minD !== Infinity && !p.paid) award(p);
+        if (!p.paid && p.minD !== Infinity && p.y < nd.y - 30) award(p);
+      }
+      pins = pins.filter((p) => p.y > nd.y - 260);
+
+      // power-ups: collected by the needle's centre point, never dangerous
+      for (const u of pups) {
+        if (!u.taken && Math.abs(nd.x - u.x) < 17 && Math.abs(nd.y - u.y) < 17) {
+          u.taken = true; boostT = u.dur; boostDur = u.dur;
+          popups.push({ x: u.x, y: u.y + 26, text: `2× POINTS · ${u.dur}s`, life: 1.1, big: true, pu: true });
+          tone(660, 0.1, "square", 0.045); setTimeout(() => tone(990, 0.14, "square", 0.04), 70); buzz(20);
+          for (let i = 0; i < 16; i++) sparks.push({ x: nd.x, y: nd.y, vx: (Math.random() - 0.5) * 260, vy: (Math.random() - 0.5) * 260, life: 0.5, c: "#6cc3b8" });
+        }
+      }
+      pups = pups.filter((u) => !u.taken && u.y > nd.y - 260);
+
+      grace -= dt;
+      if (grace <= 0 && mult > 1) { mult = 1; popups.push({ x: nd.x, y: nd.y - 30, text: "multiplier lost", life: 0.8, small: true }); tone(220, 0.15, "triangle", 0.03, 160); }
+      score = Math.floor(nd.y / 25) + grazePts;
+
+      const last = trail[trail.length - 1];
+      if (!last || nd.y - last.y > 5) trail.push({ x: nd.x, y: nd.y, g: grace > 2.2 || edgeD < GRAZE * 0.8, pu: boostT > 0 });
+      if (trail.length > 160) trail.shift();
+    }
+    for (const s of sparks) { s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; }
+    sparks = sparks.filter((s) => s.life > 0);
+    for (const p of popups) { p.y += (state === "play" ? speed() * 0.85 : 30) * dt; p.life -= dt; }
+    popups = popups.filter((p) => p.life > 0);
+    shake = Math.max(0, shake - dt);
+  }
+
+  // ---------- draw ----------
+  const sy = (wy) => NY - (wy - nd.y);
+  function draw() {
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random() - 0.5) * 14 * shake, (Math.random() - 0.5) * 14 * shake);
+    const fab = mods.fabric || FABRICS[0];
+    ctx.fillStyle = fab.out; ctx.fillRect(-10, -10, W + 20, H + 20);
+    // corridor
+    ctx.save();
+    const pts = [];
+    for (let y = -10; y <= H + 10; y += 8) { const wy = nd.y + (NY - y); pts.push([y, center(wy), half(wy)]); }
+    ctx.beginPath();
+    pts.forEach(([y, c, hw], i) => i ? ctx.lineTo(c - hw, y) : ctx.moveTo(c - hw, y));
+    for (let i = pts.length - 1; i >= 0; i--) { const [y, c, hw] = pts[i]; ctx.lineTo(c + hw, y); }
+    ctx.closePath();
+    ctx.translate(0, (nd.y % 48)); ctx.fillStyle = twillFor(fab.base); ctx.fill(); ctx.translate(0, -(nd.y % 48));
+    ctx.restore();
+    // double topstitch along each seam
+    ctx.strokeStyle = "#f39a1d"; ctx.lineWidth = 2; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -(nd.y % 13);
+    for (const side of [-1, 1]) for (const inset of [6, 12]) {
+      ctx.beginPath(); pts.forEach(([y, c, hw], i) => { const x = c + side * (hw + inset); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    // best-distance marker (goal gradient: you can see the line you have to beat)
+    const markDist = gameMode === "daily" && daily ? (L.dailyDist[daily.key] || 0) : L.bestDist;
+    if (markDist > 200 && state !== "menu") {
+      const y = sy(markDist);
+      if (y > -20 && y < H + 20) {
+        const c = center(markDist), hw = half(markDist);
+        ctx.strokeStyle = "#ffd75e"; ctx.lineWidth = 3; ctx.setLineDash([3, 5]);
+        ctx.beginPath(); ctx.moveTo(c - hw, y); ctx.lineTo(c + hw, y); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "#ffd75e"; ctx.font = "11px Bungee, 'Arial Black', sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(gameMode === "daily" ? "YOUR BEST TODAY" : "YOUR FURTHEST", c, y - 8);
+      }
+    }
+    // pins
+    for (const p of pins) {
+      const y = sy(p.y); if (y < -30 || y > H + 30) continue;
+      ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.beginPath(); ctx.arc(p.x + 3, y + 4, p.r, 0, 7); ctx.fill();
+      if (p.minD !== Infinity && !p.paid) { ctx.strokeStyle = "rgba(255,215,94,.7)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, y, p.r + GRAZE, 0, 7); ctx.stroke(); }
+      const g = ctx.createRadialGradient(p.x - p.r * 0.35, y - p.r * 0.35, 1, p.x, y, p.r);
+      g.addColorStop(0, "#ffffff"); g.addColorStop(0.35, p.gold ? "#ffd75e" : p.head); g.addColorStop(1, p.gold ? "#b8860b" : "#3b2a2a");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, y, p.r, 0, 7); ctx.fill();
+      if (p.gold) { ctx.strokeStyle = "#fff6c8"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, y, p.r + 3 + Math.sin(t * 6) * 1.5, 0, 7); ctx.stroke(); }
+    }
+    // power-up squares
+    for (const u of pups) {
+      const y = sy(u.y); if (y < -30 || y > H + 30) continue;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 5 + u.rot);
+      ctx.save(); ctx.translate(u.x, y); ctx.rotate(Math.sin(t * 1.5 + u.rot) * 0.25);
+      ctx.fillStyle = `rgba(108,195,184,${0.18 + 0.2 * pulse})`; ctx.fillRect(-17, -17, 34, 34);
+      ctx.fillStyle = "#6cc3b8"; ctx.fillRect(-12, -12, 24, 24);
+      ctx.strokeStyle = "#f6efe2"; ctx.lineWidth = 2; ctx.strokeRect(-12, -12, 24, 24);
+      ctx.fillStyle = "#17233b"; ctx.font = "11px Bungee, 'Arial Black', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("2×", 0, 1); ctx.textBaseline = "alphabetic";
+      ctx.restore();
+    }
+    // thread trail in the player's colour
+    const tc = colorHex(myColor());
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (let i = 1; i < trail.length; i++) {
+      const a = trail[i - 1], b = trail[i];
+      ctx.strokeStyle = b.pu ? "#6cc3b8" : b.g ? "#ffd75e" : tc; ctx.lineWidth = b.g || b.pu ? 4 : 2.5; ctx.globalAlpha = 0.25 + 0.75 * (i / trail.length);
+      ctx.beginPath(); ctx.moveTo(a.x, sy(a.y)); ctx.lineTo(b.x, sy(b.y)); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    if (trail.length && state !== "menu") { const a = trail[trail.length - 1]; ctx.strokeStyle = tc; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(a.x, sy(a.y)); ctx.lineTo(nd.x, NY); ctx.stroke(); }
+    // needle
+    if (state !== "dead") {
+      const ang = Math.atan2(-speed(), state === "play" ? nd.vx : 0);
+      ctx.save(); ctx.translate(nd.x, NY); ctx.rotate(ang + Math.PI / 2);
+      ctx.fillStyle = "#e9eef5"; ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(3, 8); ctx.lineTo(-3, 8); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#18294a"; ctx.beginPath(); ctx.ellipse(0, 4, 1, 2.5, 0, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    for (const s of sparks) { ctx.globalAlpha = Math.max(0, s.life * 2); ctx.fillStyle = s.c; ctx.fillRect(s.x - 2, sy(s.y) - 2, 4, 4); }
+    ctx.globalAlpha = 1;
+    // Night Shift: only the fabric around (and just ahead of) the needle is lit
+    if (mods.night && state !== "menu") {
+      const lg = ctx.createRadialGradient(nd.x, NY - 70, 30, nd.x, NY - 70, 210);
+      lg.addColorStop(0, "rgba(6,9,18,0)"); lg.addColorStop(0.6, "rgba(6,9,18,.55)"); lg.addColorStop(1, "rgba(6,9,18,.94)");
+      ctx.fillStyle = lg; ctx.fillRect(-10, -10, W + 20, H + 20);
+    }
+    hud();
+    ctx.restore();
+  }
+  function stroked(text, x, y, size, fill, align = "center") {
+    ctx.font = `${size}px Bungee, 'Arial Black', sans-serif`; ctx.textAlign = align;
+    ctx.lineWidth = Math.max(4, size / 6); ctx.strokeStyle = "#17233b"; ctx.strokeText(text, x, y); ctx.fillStyle = fill; ctx.fillText(text, x, y);
+  }
+  function hud() {
+    if (state === "menu") return;
+    stroked(fmt(score), W / 2, 62, 40, "#f6efe2");
+    if (gameMode === "daily" && daily) stroked(`DAILY #${daily.no}`, 18, 30, 12, "#ffd75e", "left");
+    const mx = 18, my = 96;
+    stroked("×" + mult, mx, my, mult > 1 ? 28 : 20, mult >= 6 ? "#ffd75e" : "#f39a1d", "left");
+    if (mult > 1) {
+      ctx.fillStyle = "rgba(23,35,59,.6)"; ctx.fillRect(mx, my + 8, 90, 7);
+      ctx.fillStyle = grace < 0.8 ? "#d9483b" : "#ffd75e"; ctx.fillRect(mx, my + 8, 90 * Math.max(0, grace / 2.6), 7);
+    }
+    if (boostT > 0) {
+      stroked("2× POINTS", mx, my + 36, 14, "#6cc3b8", "left");
+      ctx.fillStyle = "rgba(23,35,59,.6)"; ctx.fillRect(mx, my + 43, 90, 6);
+      ctx.fillStyle = "#6cc3b8"; ctx.fillRect(mx, my + 43, 90 * (boostT / boostDur), 6);
+    }
+    // goal gradient: the next friend (or player) to pass, otherwise your own best
+    const rival = state === "play" ? rivalFor(score) : null;
+    const localBest = gameMode === "daily" && daily ? (L.dailyBest[daily.key] || 0) : L.best;
+    if (rival && rival.score - score < Math.max(200, rival.score * 0.3)) {
+      const n = rival.name.length > 12 ? rival.name.slice(0, 11) + "…" : rival.name;
+      stroked(rival.friend ? `${fmt(rival.score - score)} to pass ${n}` : `${fmt(rival.score - score)} to pass ${n} (#${rival.rank})`, W / 2, 88, 13, "#ffd75e");
+    } else if (localBest > 0 && state === "play") {
+      const gap = localBest - score;
+      if (gap > 0 && gap < Math.max(150, localBest * 0.35)) stroked(`${fmt(gap)} to beat your best`, W / 2, 88, 13, "#ffd75e");
+      else if (gap <= 0) stroked("NEW BEST", W / 2, 88, 14, "#ffd75e");
+    }
+    for (const p of popups) {
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      stroked(p.text, Math.max(70, Math.min(W - 70, p.x)), sy(p.y), p.big ? 20 : p.small ? 12 : 14, p.pu ? "#6cc3b8" : p.gold ? "#ffd75e" : p.big ? "#ffffff" : "#f39a1d");
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---------- small UI helpers ----------
+  let toastTimer;
+  function toast(msg) { const el = $("toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 2200); }
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  async function copyText(text, okMsg) {
+    try { await navigator.clipboard.writeText(text); toast(okMsg || "Copied"); }
+    catch (e) { toast("Couldn't copy here. Select the text and copy it yourself."); }
+  }
+  function friendly(e) {
+    const msg = (e && e.message) || "";
+    return /invalid run/.test(msg) ? "This run could not be verified, so it was not posted."
+      : /too many/.test(msg) ? "Scores are coming in too fast. Wait a few seconds and play again."
+      : /daily has ended/.test(msg) ? "That daily has ended. Today's course is a new one."
+      : /sign in/.test(msg) ? "Your sign-in expired. Sign in again."
+      : /no player with that code/.test(msg) ? "No player has that code. Check it and try again."
+      : /own code/.test(msg) ? "That's your own code. Send it to a friend instead."
+      : /list is full/.test(msg) ? "Your friend list is full (200)."
+      : /choose a name/.test(msg) ? "Pick a name first."
+      : /name/.test(msg) ? "That name is not allowed. Use 2 to 16 letters, numbers, spaces, dots, dashes or underscores."
+      : msg || "Something went wrong. Try again.";
+  }
+  const G_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+  const F_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M13.5 21v-7.5h2.5l.4-3h-2.9V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.4V21h3.1z"/></svg>';
+  function signInBlock(label) {
+    const wrap = el("div", "world");
+    const lab = el("div"); lab.innerHTML = label; wrap.appendChild(lab);
+    const sso = el("div", "sso"); sso.innerHTML = `<button class="g" data-p="google">${G_ICON}Google</button><button class="f" data-p="facebook">${F_ICON}Facebook</button>`;
+    const err = el("div", "err");
+    sso.querySelectorAll("button").forEach((b) => b.onclick = async () => { try { await Board.signIn(b.dataset.p); } catch (e) { err.textContent = "Sign-in is not available right now. Try again later."; } });
+    wrap.appendChild(sso); wrap.appendChild(err);
+    return wrap;
+  }
+  // name form: used before a first post, on the profile and before adding friends
+  function nameForm(label, onDone, buttonText) {
+    const wrap = el("div", "world");
+    const lab = el("div"); lab.innerHTML = label; wrap.appendChild(lab);
+    const row = el("div", "row");
+    const inp = el("input", "field"); inp.maxLength = 16; inp.placeholder = "Your name"; inp.autocomplete = "nickname"; inp.setAttribute("aria-label", "Your name");
+    inp.value = Board.name || Board.suggestedName();
+    const b = el("button", "btn alt", buttonText || "Save"); b.style.flex = "0 0 auto";
+    const err = el("div", "err");
+    const go = async () => {
+      const n = cleanName(inp.value);
+      if (!NAME_RE.test(n)) { err.textContent = "Use 2 to 16 letters, numbers, spaces, dots, dashes or underscores."; return; }
+      b.disabled = true;
+      try { await Board.setName(n); await onDone(n); } catch (e) { err.textContent = friendly(e); }
+      b.disabled = false;
+    };
+    b.onclick = go; inp.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") go(); });
+    row.appendChild(inp); row.appendChild(b); wrap.appendChild(row); wrap.appendChild(err);
+    return wrap;
+  }
+
+  // ---------- start menu ----------
+  function renderMenu() {
+    $("m-best").textContent = L.best > 0 ? `Endless · best ${fmt(L.best)}` : "Endless · no best yet";
+    const d = makeDaily(todayKey());
+    $("d-title").textContent = `Daily #${d.no}`;
+    $("d-clock").textContent = `new in ${hm(msToMidnightUTC())}`;
+    const chips = $("d-chips"); chips.textContent = "";
+    for (const q of d.quirks) chips.appendChild(el("span", "chip", q.name));
+    chips.appendChild(el("span", "chip", d.mods.fabric.name));
+    const todayBest = Math.max(L.dailyBest[d.key] || 0, Board.dailyBest());
+    const streak = Board.prof ? (Board.prof.daily_streak || 0) : localStreak();
+    $("d-stat").textContent = (todayBest ? `Best today ${fmt(todayBest)}` : "Not played yet today") + (streak ? ` · streak ${streak} day${streak === 1 ? "" : "s"}` : "");
+  }
+  setInterval(() => { if (!$("menu").hidden) renderMenu(); }, 30000);
+
+  let pendingMode = "endless";
+  function play(mode) {
+    pendingMode = mode;
+    if (!store.get("introSeen", false)) return showIntro();
+    if (mode === "daily" && store.get("dintroSeen", "") !== todayKey()) return showDailyIntro();
+    start(mode);
+  }
+  function showIntro() { hideAll(); $("intro").hidden = false; $("b-ready").focus(); }
+  function introReady() {
+    store.set("introSeen", true);
+    if (pendingMode === "daily" && store.get("dintroSeen", "") !== todayKey()) return showDailyIntro();
+    start(pendingMode);
+  }
+  function showDailyIntro() {
+    const d = makeDaily(todayKey());
+    $("di-title").textContent = `Daily #${d.no}`;
+    const box = $("di-quirks"); box.textContent = "";
+    for (const q of d.quirks) { const c = el("div", "quirk"); c.appendChild(el("b", null, q.name)); c.appendChild(el("span", null, q.desc)); box.appendChild(c); }
+    const fab = el("div", "quirk"); fab.appendChild(el("b", null, d.mods.fabric.name)); fab.appendChild(el("span", null, "Today's fabric.")); box.appendChild(fab);
+    hideAll(); $("dintro").hidden = false; $("b-dready").focus();
+  }
+  function dailyReady() { store.set("dintroSeen", todayKey()); start("daily"); }
+
+  // ---------- panels ----------
+  let panelFrom = "menu";
+  function openPanel(id) {
+    panelFrom = state === "dead" && !$("over").hidden ? "over" : "menu";
+    hideAll(); $(id).hidden = false;
+    if (id === "profile") renderProfile(); else if (id === "friends") renderFriends(); else if (id === "lb") renderBoard();
+  }
+  function closePanel() {
+    hideAll();
+    if (panelFrom === "over" && state === "dead") $("over").hidden = false; else { if (state !== "menu") toMenu(); else { $("menu").hidden = false; renderMenu(); } }
+  }
+
+  // profile
+  function statGrid(items) {
+    const g = el("div", "scores");
+    for (const [k, v] of items) { const c = el("div"); c.appendChild(el("small", null, k)); c.appendChild(el("strong", null, v)); g.appendChild(c); }
+    return g;
+  }
+  async function renderProfile() {
+    const box = $("pf-body"); box.textContent = "";
+    const who = el("div", "who"); const av = el("div", "av"); av.style.background = colorHex(myColor());
+    av.textContent = (Board.name || "?").slice(0, 1).toUpperCase();
+    const wt = el("div"); wt.appendChild(el("b", null, Board.signedIn() && Board.name ? Board.name : "Guest"));
+    wt.appendChild(el("span", null, Board.mode === "supabase" ? (Board.session ? "Signed in" : "Playing as a guest on this device") : Board.mode === "claude" ? "Signed in with Claude" : "Playing on this device"));
+    who.appendChild(av); who.appendChild(wt); box.appendChild(who);
+
+    // thread colour (works for guests too; saved to the account when signed in)
+    const swl = el("div", "note", "Your thread colour"); box.appendChild(swl);
+    const sw = el("div", "swatches");
+    for (const [k, hex] of Object.entries(COLORS)) {
+      const b = el("button", "sw"); b.style.background = hex; b.setAttribute("aria-label", COLOR_NAMES[k]); b.setAttribute("aria-pressed", String(k === myColor()));
+      b.onclick = async () => { try { await Board.setColor(k); } catch (e) { toast(friendly(e)); } renderProfile(); };
+      sw.appendChild(b);
+    }
+    box.appendChild(sw);
+
+    if (Board.signedIn() && Board.mode !== "off") {
+      box.appendChild(nameForm(Board.name ? "Display name" : "<b>Pick the name the world will see.</b>", async () => { toast("Name saved"); renderProfile(); }));
+    }
+    if (Board.friendsOK() && Board.code) {
+      const code = el("div", "code"); const ct = el("div"); ct.appendChild(el("small", null, "Your friend code")); ct.appendChild(el("strong", null, Board.code));
+      const cb = el("button", "mini", "Copy"); cb.onclick = () => copyText(Board.code, "Friend code copied");
+      code.appendChild(ct); code.appendChild(cb); box.appendChild(code);
+    }
+
+    const p = Board.prof || {};
+    const streak = Board.prof ? (p.daily_streak || 0) : localStreak();
+    box.appendChild(statGrid([
+      ["Best", fmt(Math.max(L.best, p.best || 0))], ["Runs", fmt(L.runs)], ["Top ×", "×" + Math.max(L.topMult, p.top_mult || 1)],
+      ["By a hair", fmt(L.hairs)], ["Streak", `${streak} day${streak === 1 ? "" : "s"}`], ["World", p.rank ? `#${fmt(p.rank)}` : "—"],
+    ]));
+    box.appendChild(el("div", "note", "Runs and By a hair count on this device. Best, streak and world rank come from your account once you're signed in."));
+    const opt = el("label", "toggle");
+    const cb = el("input"); cb.type = "checkbox"; cb.id = "pf-analytics"; cb.checked = analyticsOn();
+    cb.onchange = () => { store.set("analytics", cb.checked); toast(cb.checked ? "Anonymous stats on" : "Anonymous stats off"); };
+    const ot = el("span"); ot.innerHTML = "<b>Share anonymous gameplay stats</b>Scores, run lengths and what ends a run, tied to a random ID on this device. No name, email or account.";
+    opt.appendChild(cb); opt.appendChild(ot); box.appendChild(opt);
+
+    if (Board.mode === "supabase") {
+      if (!Board.session) box.appendChild(signInBlock("<b>Sign in to save your profile</b>, join the leaderboards and add friends. Playing never needs an account."));
+      else {
+        const out = el("button", "link", "Sign out"); out.onclick = async () => { await Board.signOut(); renderProfile(); }; box.appendChild(out);
+        // two taps, no browser dialog: the first arms it for 5 seconds
+        const del = el("button", "link", "Delete account"); let armed = false, disarm;
+        del.onclick = async () => {
+          if (!armed) { armed = true; del.textContent = "Tap again to delete for good"; del.style.color = "var(--red)"; disarm = setTimeout(() => { armed = false; del.textContent = "Delete account"; del.style.color = ""; }, 5000); return; }
+          clearTimeout(disarm); del.disabled = true;
+          try { await Board.call("delete_me"); await Board.signOut(); toast("Account deleted"); }
+          catch (e) { toast("Couldn't delete the account. Try again."); }
+          renderProfile();
+        };
+        box.appendChild(del);
+      }
+    } else if (Board.mode === "claude") {
+      box.appendChild(el("div", "note", "Friend codes and sign-in with Google or Facebook work on the game's own website."));
+    }
+  }
+
+  // friends
+  async function renderFriends() {
+    const box = $("fr-body"); box.textContent = "";
+    if (Board.mode === "loading") { box.appendChild(el("div", "empty", "Connecting…")); return; }
+    if (Board.mode !== "supabase") { box.appendChild(el("div", "empty", "Friends work on the game's own website, where you sign in with Google or Facebook. This preview can't reach it.")); return; }
+    if (!Board.session) {
+      const pendingAdd = store.get("pendingAdd", null);
+      box.appendChild(signInBlock(pendingAdd ? `<b>Sign in to add the friend who invited you</b> (code ${pendingAdd}).` : "<b>Sign in to add friends</b> and see how you rank against them."));
+      return;
+    }
+    if (!Board.named()) { box.appendChild(nameForm("<b>Pick the name your friends will see.</b>", async () => { await processPendingAdd(); renderFriends(); }, "Save")); return; }
+
+    // your code + invite
+    const code = el("div", "code"); const ct = el("div"); ct.appendChild(el("small", null, "Your friend code")); ct.appendChild(el("strong", null, Board.code || "…"));
+    const btns = el("div", "row"); btns.style.flex = "0 0 auto";
+    const cb = el("button", "mini ghost", "Copy"); cb.onclick = () => copyText(Board.code, "Friend code copied");
+    const sb = el("button", "mini", "Invite"); sb.onclick = invite;
+    btns.appendChild(cb); btns.appendChild(sb); code.appendChild(ct); code.appendChild(btns); box.appendChild(code);
+
+    // add by code
+    const row = el("div", "row");
+    const inp = el("input", "field"); inp.maxLength = 8; inp.placeholder = "Friend's code"; inp.setAttribute("aria-label", "Friend's code"); inp.autocapitalize = "characters";
+    const ab = el("button", "btn alt", "Add"); ab.style.flex = "0 0 auto";
+    const err = el("div", "err");
+    const add = async () => {
+      const c = inp.value.trim(); if (!c) return;
+      ab.disabled = true;
+      try { const f = await Board.addFriend(c); toast(`You and ${f.name} are now friends`); renderFriends(); refreshRivals(); }
+      catch (e) { err.textContent = friendly(e); }
+      ab.disabled = false;
+    };
+    ab.onclick = add; inp.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") add(); });
+    row.appendChild(inp); row.appendChild(ab); box.appendChild(row); box.appendChild(err);
+
+    // list
+    const list = el("ul", "list friends"); list.appendChild(el("li", "empty", "Loading…")); box.appendChild(list);
+    try {
+      const fs = await Board.friends();
+      list.textContent = "";
+      if (!fs.length) list.appendChild(el("li", "empty", "No friends yet. Send your code or tap Invite."));
+      for (const f of fs) {
+        const li = el("li");
+        const nm = el("div", "nm"); const dot = el("span", "dot"); dot.style.background = colorHex(f.color); nm.appendChild(dot);
+        const nb = el("div"); nb.appendChild(el("div", null, f.name));
+        nb.appendChild(el("div", "sub", `Best ${f.best ? fmt(f.best) : "—"} · today ${f.today ? fmt(f.today) : "—"}`)); nm.appendChild(nb);
+        const rm = el("button", "mini ghost", "Remove");
+        rm.onclick = async () => {
+          if (rm.dataset.sure !== "1") { rm.dataset.sure = "1"; rm.textContent = "Sure?"; return; }
+          try { await Board.removeFriend(f.code); toast(`Removed ${f.name}`); renderFriends(); refreshRivals(); } catch (e) { toast(friendly(e)); }
+        };
+        li.appendChild(nm); li.appendChild(el("span")); li.appendChild(rm); list.appendChild(li);
+      }
+    } catch (e) { list.textContent = ""; list.appendChild(el("li", "empty", friendly(e))); }
+  }
+  async function invite() {
+    if (!Board.code) return;
+    const url = `${location.origin}${location.pathname}?add=${Board.code}`;
+    const text = `Play By a Thread with me. My friend code is ${Board.code}.`;
+    if (navigator.share) { try { await navigator.share({ title: "By a Thread", text, url }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+    copyText(`${text} ${url}`, "Invite link copied");
+  }
+  async function processPendingAdd() {
+    const code = store.get("pendingAdd", null);
+    if (!code || !Board.friendsOK() || !Board.named()) return;
+    store.set("pendingAdd", null);
+    try { const f = await Board.addFriend(code); toast(`You and ${f.name} are now friends`); refreshRivals(); }
+    catch (e) { if (!/own code/.test(e.message || "")) toast(friendly(e)); }
+  }
+
+  // leaderboards
+  const lbv = { scope: "global", mode: "endless", period: "all", dperiod: "today" };
+  const curPeriod = () => lbv.mode === "daily" ? lbv.dperiod : lbv.period;
+  function setTabs() {
+    const set = (id, on) => $(id).setAttribute("aria-pressed", String(on));
+    set("t-global", lbv.scope === "global"); set("t-friends", lbv.scope === "friends");
+    set("t-endless", lbv.mode === "endless"); set("t-daily", lbv.mode === "daily");
+    const daily = lbv.mode === "daily";
+    $("t-all").textContent = daily ? "Today" : "All time"; $("t-week").textContent = daily ? "Yesterday" : "This week";
+    set("t-all", daily ? lbv.dperiod === "today" : lbv.period === "all"); set("t-week", daily ? lbv.dperiod === "yesterday" : lbv.period === "week");
+  }
+  async function renderBoard() {
+    setTabs();
+    const list = $("lb-list"), sum = $("lb-sum"), auth = $("lb-auth");
+    list.textContent = ""; sum.textContent = ""; auth.textContent = ""; $("lb-day").textContent = "";
+    if (Board.mode === "loading") { list.appendChild(el("li", "empty", "Connecting…")); return; }
+    if (!Board.ready()) { list.appendChild(el("li", "empty", "The leaderboard isn't reachable from here. Your bests still count on this device.")); return; }
+    if (lbv.scope === "friends") {
+      if (Board.mode !== "supabase") { list.appendChild(el("li", "empty", "Friends boards work on the game's own website.")); return; }
+      if (!Board.session) { auth.appendChild(signInBlock("<b>Sign in to compare scores with friends.</b>")); return; }
+    }
+    if (Board.mode === "supabase" && !Board.session) auth.appendChild(signInBlock("<b>Sign in to join the board.</b> Playing never needs an account."));
+    list.appendChild(el("li", "empty", "Loading…"));
+    const v = { scope: lbv.scope, mode: lbv.mode, period: curPeriod() };
+    const stale = () => v.scope !== lbv.scope || v.mode !== lbv.mode || v.period !== curPeriod();
+    const yday = v.mode === "daily" && v.period === "yesterday";
+    const when = v.mode === "daily" ? (yday ? " yesterday" : " today") : "";
+    if (v.mode === "daily") { const d = makeDaily(yday ? yesterdayKey() : todayKey()); $("lb-day").textContent = `Daily #${d.no} · ${d.quirks.map((q) => q.name).join(" + ")}`; }
+    try {
+      const [rows, mine] = await Promise.all([Board.top(v.scope, v.mode, v.period), Board.mine(v.scope, v.mode, v.period).catch(() => null)]);
+      if (stale()) return;
+      list.textContent = "";
+      if (!rows || !rows.length) {
+        list.appendChild(el("li", "empty", v.scope === "friends" ? `No friend scores${when} yet.` : yday ? "Nobody played yesterday's daily." : v.mode === "daily" ? "Nobody has played today's daily yet. Take the top spot." : "No scores yet. Be the first."));
+      }
+      for (const r of rows || []) {
+        const li = el("li", r.me ? "me" : null);
+        li.appendChild(el("span", "rk", "#" + r.rank));
+        const nm = el("span", "nm"); const dot = el("span", "dot"); dot.style.background = colorHex(r.color); nm.appendChild(dot); nm.appendChild(el("span", null, r.name));
+        li.appendChild(nm); li.appendChild(el("span", "sc", fmt(r.score))); li.appendChild(el("span", "mx", "×" + (r.mult || 1)));
+        list.appendChild(li);
+      }
+      if (v.scope === "friends") {
+        const n = mine ? mine.players : 0;
+        if (n <= 1) {
+          sum.textContent = "Add friends to see how you rank against them.";
+          const go = el("button", "btn alt", "Add friends"); go.onclick = () => openPanel("friends"); auth.appendChild(go);
+        } else if (mine && mine.rank) sum.innerHTML = `You ${yday ? "finished" : "are"} <b>#${mine.rank}</b> of ${n} friends${when}.`;
+        else sum.textContent = yday ? "You didn't play yesterday's daily." : v.mode === "daily" ? "Play today's daily to get on your friends' board." : "Post a score to join your friends' board.";
+      } else if (Board.signedIn()) {
+        sum.innerHTML = mine && mine.rank ? `You ${yday ? "finished" : "are"} <b>#${fmt(mine.rank)}</b> of ${fmt(mine.players)} players${when}.`
+          : (yday ? "You didn't play yesterday's daily." : v.mode === "daily" ? "Play today's daily to get on the board." : "Post a score to get on the board.");
+      }
+      if (Board.mode === "supabase" && Board.session) {
+        const line = el("div"); line.appendChild(document.createTextNode(Board.named() ? `Signed in as ${Board.name}. ` : "Signed in. "));
+        const out = el("button", "link", "Sign out"); out.onclick = async () => { await Board.signOut(); renderBoard(); }; line.appendChild(out); auth.appendChild(line);
+      }
+    } catch (e) {
+      if (stale()) return;
+      list.textContent = ""; list.appendChild(el("li", "empty", friendly(e)));
+    }
+  }
+
+  // ---------- game over ----------
+  let deaths = 0;
+  function showOver(newBest) {
+    deaths++;
+    const card = $("over-card");
+    if (deaths % 3 === 0) {
+      track("ad_shown", { mode: gameMode, detail: "interstitial" });
+      card.innerHTML = `<div class="ad"><b>Ad break</b>An interstitial ad shows here every 3 runs in the published game.</div><button class="btn" id="b-ad">Continue</button>`;
+      $("over").hidden = false; $("b-ad").onclick = () => showCard(newBest); return;
+    }
+    showCard(newBest);
+  }
+  function showCard(newBest) {
+    const card = $("over-card"); card.textContent = "";
+    const title = runTopMult >= 8 ? "Fearless" : closeCalls >= 15 ? "Steady hands" : closeCalls >= 5 ? "Snagged" : "Too careful?";
+    if (gameMode === "daily" && daily) card.appendChild(el("div", "note", `Daily #${daily.no} · ${daily.quirks.map((q) => q.name).join(" + ")}`));
+    card.appendChild(el("h2", "logo", title)).style.fontSize = "28px";
+    if (newBest && score > 0) card.appendChild(el("div", "badge", gameMode === "daily" ? "Best today" : "New best"));
+    const bestShown = gameMode === "daily" && daily ? (L.dailyBest[daily.key] || 0) : L.best;
+    card.appendChild(statGrid([["Score", fmt(score)], [gameMode === "daily" ? "Best today" : "Best", fmt(bestShown)], ["Top ×", "×" + runTopMult]]));
+    card.appendChild(el("div", "note", `${closeCalls} close call${closeCalls === 1 ? "" : "s"}${hairs ? `, ${hairs} by a hair` : ""}. ${closeCalls < 5 ? "Points come from passing close to pins. Get greedy." : "Keep the multiplier alive by chaining close calls."}`));
+    const world = el("div", "world"); world.id = "world"; card.appendChild(world);
+    const shareRow = el("div", "row");
+    const shareRun = el("button", "btn alt", "Share this run"); shareRun.onclick = () => share("run");
+    shareRow.appendChild(shareRun);
+    if (bestShown > score) { const sb = el("button", "btn alt"); sb.innerHTML = `Share best<small>${fmt(bestShown)}</small>`; sb.onclick = () => share("best"); shareRow.appendChild(sb); }
+    card.appendChild(shareRow);
+    const again = el("button", "btn", gameMode === "daily" ? "Try today's course again" : "Sew again"); again.id = "b-retry"; again.onclick = () => start(gameMode); card.appendChild(again);
+    if (!revived && gameMode === "endless") {
+      const cont = el("button", "btn alt"); cont.innerHTML = "Keep sewing<small>rewarded ad slot · once per run</small>"; cont.onclick = revive; card.appendChild(cont);
+    }
+    const row = el("div", "row");
+    const lb = el("button", "link", "Leaderboard"); lb.onclick = () => { lbv.mode = gameMode; openPanel("lb"); };
+    const mn = el("button", "link", "Menu"); mn.onclick = toMenu;
+    row.appendChild(lb); row.appendChild(mn); card.appendChild(row);
+    $("over").hidden = false;
+    postRun();
+  }
+
+  // ---------- sharing a score ----------
+  // A 1080x1350 card (fits Instagram and WhatsApp) plus a short message with a link back to the game.
+  async function shareCard(o) {
+    try { await document.fonts.load("120px Bungee"); } catch (e) {}
+    const c = document.createElement("canvas"); c.width = 1080; c.height = 1350;
+    const g = c.getContext("2d"), fab = o.fabric || FABRICS[0], tc = colorHex(myColor());
+    g.fillStyle = fab.out; g.fillRect(0, 0, 1080, 1350);
+    g.fillStyle = fab.base; roundRect(g, 60, 60, 960, 1230, 48); g.fill();
+    g.save(); roundRect(g, 60, 60, 960, 1230, 48); g.clip();
+    g.strokeStyle = "rgba(255,255,255,.06)"; g.lineWidth = 6;
+    for (let i = -1350; i < 1080; i += 22) { g.beginPath(); g.moveTo(i, 1350); g.lineTo(i + 1350, 0); g.stroke(); }
+    g.restore();
+    g.strokeStyle = "#f39a1d"; g.lineWidth = 6; g.setLineDash([26, 20]); roundRect(g, 90, 90, 900, 1170, 34); g.stroke(); g.setLineDash([]);
+    // the thread: the path of this run, or a decorative stitch for a best
+    let pts = o.trail && o.trail.length > 8 ? o.trail : null;
+    if (pts) {
+      const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      pts = pts.map(([x, y]) => [180 + ((x - minX) / Math.max(40, maxX - minX)) * 720, 1160 - ((y - minY) / Math.max(1, maxY - minY)) * 330]);
+    } else pts = Array.from({ length: 60 }, (_, i) => [180 + i * 12.2, 1000 + Math.sin(i / 5) * 90]);
+    g.strokeStyle = tc; g.lineWidth = 14; g.lineCap = "round"; g.lineJoin = "round"; g.beginPath();
+    pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+    const [ex, ey] = pts[pts.length - 1];
+    g.fillStyle = "#e9eef5"; g.beginPath(); g.moveTo(ex, ey - 46); g.lineTo(ex + 9, ey + 18); g.lineTo(ex - 9, ey + 18); g.closePath(); g.fill();
+    // text
+    const text = (str, x, y, size, fill, align = "center", family = "Bungee, 'Arial Black', sans-serif", weight = "") => {
+      g.font = `${weight} ${size}px ${family}`; g.textAlign = align; g.lineWidth = Math.max(8, size / 7); g.strokeStyle = "#17233b"; g.lineJoin = "round";
+      g.strokeText(str, x, y); g.fillStyle = fill; g.fillText(str, x, y);
+    };
+    text("BY A THREAD", 540, 205, 64, "#f6efe2");
+    text(o.label, 540, 290, 40, "#ffd75e");
+    if (o.sub) text(o.sub, 540, 345, 32, "#f6efe2", "center", "'DM Sans', system-ui, sans-serif", "800");
+    text(fmt(o.score), 540, 560, o.score >= 100000 ? 170 : 210, "#f6efe2");
+    if (o.badge) { g.fillStyle = "#f39a1d"; roundRect(g, 380, 600, 320, 70, 35); g.fill(); text(o.badge, 540, 650, 34, "#17233b"); }
+    if (o.stats) text(o.stats, 540, 750, 36, "#f6efe2", "center", "'DM Sans', system-ui, sans-serif", "800");
+    text(SITE_URL.replace("https://", ""), 540, 1240, 38, "#ffd75e");
+    return await new Promise((ok) => c.toBlob(ok, "image/png"));
+  }
+  function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  async function share(kind) {
+    const run = lastRun; if (!run) return;
+    const d = run.mode === "daily" ? makeDaily(run.day) : null;
+    const best = kind === "best";
+    const sc = best ? (d ? (L.dailyBest[d.key] || 0) : L.best) : run.score;
+    const label = d ? `DAILY #${d.no}` : "ENDLESS";
+    const sub = d ? d.quirks.map((q) => q.name).join(" + ") : null;
+    const stats = best ? null : `${run.close} close call${run.close === 1 ? "" : "s"} · top ×${run.mult}${run.hairs ? ` · ${run.hairs} by a hair` : ""}`;
+    const url = SITE_URL + (Board.code ? `/?add=${Board.code}` : "");
+    const msg = d
+      ? `I scored ${fmt(sc)} on By a Thread Daily #${d.no} (${sub}). Same course for everyone today. Can you beat it?`
+      : `I scored ${fmt(sc)} on By a Thread${best ? ", my best so far" : ""}. Can you beat it?`;
+    const full = `${msg} ${url}`;
+    let blob = null;
+    try { blob = await shareCard({ score: sc, label, sub, stats, trail: best ? null : run.trail, fabric: d ? d.mods.fabric : FABRICS[0], badge: best ? (d ? "BEST TODAY" : "MY BEST") : null }); } catch (e) {}
+    openShare({ blob, msg, url, full });
+  }
+  // share preview: the card, plus share / save / copy
+  let shareData = null, shareUrl = null;
+  function openShare(dta) {
+    shareData = dta;
+    if (shareUrl) URL.revokeObjectURL(shareUrl);
+    shareUrl = dta.blob ? URL.createObjectURL(dta.blob) : null;
+    $("sh-img").hidden = !shareUrl; if (shareUrl) $("sh-img").src = shareUrl;
+    $("sh-msg").textContent = dta.full;
+    $("sh-share").hidden = !navigator.share;
+    $("over").hidden = true; $("sharebox").hidden = false;
+  }
+  function closeShare() { $("sharebox").hidden = true; if (state === "dead") $("over").hidden = false; else toMenu(); }
+  async function doShare() {
+    const dta = shareData; if (!dta) return;
+    track("share", { mode: lastRun && lastRun.mode, detail: "share" });
+    try {
+      const file = dta.blob && new File([dta.blob], "by-a-thread.png", { type: "image/png" });
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: dta.full }); return; }
+      if (navigator.share) { await navigator.share({ title: "By a Thread", text: dta.msg, url: dta.url }); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    copyText(dta.full, "Sharing isn't available here, so the message was copied instead.");
+  }
+  async function saveImage() {
+    const dta = shareData; if (!dta || !dta.blob) return;
+    track("share", { mode: lastRun && lastRun.mode, detail: "save" });
+    if (window.claude && typeof window.claude.use === "function") {
+      const dl = await window.claude.use("downloads").catch(() => null);
+      if (!dl) { toast("Saving isn't available here. Long-press the image to save it."); return; }
+      try { await dl.save({ filename: "by-a-thread.png", data: dta.blob }); }
+      catch (e) { if (e && e.code !== "declined") toast("Couldn't save the image here. Long-press it to save instead."); }
+      return;
+    }
+    const a = document.createElement("a"); a.href = shareUrl; a.download = "by-a-thread.png"; document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // ---------- posting scores ----------
+  function qualifies(run) {
+    if (!run || run.ms < 1000 || run.score <= 0) return false;
+    if (run.mode === "daily") return run.day === todayKey() && run.score > Board.dailyBest();
+    return run.score > Board.best.endless;
+  }
+  function rankText(res, mode) {
+    const g = res && res.global, f = res && res.friends;
+    const parts = [];
+    if (g && g.rank) parts.push(`World <b>#${fmt(g.rank)}</b> of ${fmt(g.players)}${mode === "daily" ? " today" : ""}`);
+    if (f && f.rank && f.players > 1) parts.push(`<b>#${f.rank}</b> of ${f.players} friends`);
+    return parts.join(" · ");
+  }
+  async function postRun() {
+    const box = $("world"); if (!box || !Board.ready() || !lastRun) return;
+    const run = lastRun;
+    if (!qualifies(run)) {
+      if (Board.signedIn()) {
+        try {
+          const [g, f] = await Promise.all([Board.mine("global", run.mode, "all"), Board.friendsOK() ? Board.mine("friends", run.mode, "all") : null]);
+          const txt = rankText({ global: g, friends: f }, run.mode); if (txt && box.isConnected) box.innerHTML = `<div>${txt}</div>`;
+        } catch (e) {}
+      }
+      return;
+    }
+    if (!Board.signedIn()) {
+      setPending(run);
+      box.appendChild(signInBlock(`<b>Sign in to put ${fmt(run.score)} on the ${run.mode === "daily" ? "daily" : "world"} board.</b> Playing never needs an account.`));
+      return;
+    }
+    if (!Board.named()) { box.appendChild(nameForm("<b>Pick the name the world will see.</b>", () => doSubmit(box, run), "Post")); return; }
+    return doSubmit(box, run);
+  }
+  async function doSubmit(box, run) {
+    if (box) box.textContent = "Posting your score…";
+    try {
+      const res = await Board.submit(run);
+      setPending(null);
+      refreshRivals();
+      if (box) box.innerHTML = `<div>${rankText(res, run.mode) || "Posted."}</div>`;
+      return res;
+    } catch (e) {
+      if (box) { box.textContent = ""; box.appendChild(el("div", "err", friendly(e))); }
+    }
+  }
+  // back from Google/Facebook: post a waiting run and handle a pending friend invite
+  async function afterSignIn() {
+    if (Board.mode !== "supabase" || !Board.session) return;
+    const pending = getPending();
+    if (!Board.named()) { if (pending || store.get("pendingAdd", null)) openPanel("profile"); return; }
+    await processPendingAdd();
+    if (pending) { if (qualifies(pending)) { await doSubmit(null, pending); toast("Your score is on the board"); } setPending(null); }
+  }
+  function onAuthChanged() {
+    afterSignIn();
+    if (!$("lb").hidden) renderBoard();
+    if (!$("profile").hidden) renderProfile();
+    if (!$("friends").hidden) renderFriends();
+    if (!$("menu").hidden) renderMenu();
+    refreshRivals();
+  }
+
+  // ---------- input ----------
+  function down(e) {
+    if (e && e.target && e.target.closest && e.target.closest("button, input, .list, .patch")) return;
+    if (state !== "play") return;
+    if (e) e.preventDefault();
+    holding = true;
+  }
+  function up() { holding = false; }
+  cv.addEventListener("pointerdown", down);
+  window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up); window.addEventListener("blur", up);
+  document.addEventListener("keydown", (e) => {
+    if (e.target && e.target.tagName === "INPUT") return;
+    const k = e.code;
+    if (!$("intro").hidden && (k === "Space" || k === "Enter")) { e.preventDefault(); introReady(); return; }
+    if (!$("dintro").hidden && (k === "Space" || k === "Enter")) { e.preventDefault(); dailyReady(); return; }
+    if (k === "Escape") { if (!$("sharebox").hidden) closeShare(); else if (!$("profile").hidden || !$("friends").hidden || !$("lb").hidden) closePanel(); return; }
+    if (k === "Space" || k === "ArrowRight") {
+      e.preventDefault(); if (e.repeat) return;
+      if (state === "play") holding = true;
+      else if (state === "menu" && !$("menu").hidden) play("endless");
+      else if (state === "dead" && !$("over").hidden && performance.now() - deadAt > 900 && $("b-retry")) start(gameMode);
+    }
+  });
+  document.addEventListener("keyup", (e) => { if (e.code === "Space" || e.code === "ArrowRight") up(); });
+  const setMute = () => { $("mute").textContent = muted ? "🔇" : "🔊"; $("mute").setAttribute("aria-label", muted ? "Sound off" : "Sound on"); };
+  $("mute").addEventListener("pointerdown", (e) => e.stopPropagation());
+  $("mute").onclick = (e) => { e.stopPropagation(); muted = !muted; store.set("muted", muted); setMute(); };
+  setMute();
+
+  $("sh-close").onclick = closeShare;
+  $("sh-share").onclick = doShare;
+  $("sh-save").onclick = saveImage;
+  $("sh-copy").onclick = () => { if (!shareData) return; track("share", { mode: lastRun && lastRun.mode, detail: "copy" }); copyText(shareData.full, "Message copied. Paste it anywhere."); };
+  $("b-play").onclick = () => play("endless");
+  $("b-daily").onclick = () => play("daily");
+  $("b-nav-lb").onclick = () => { lbv.mode = "endless"; openPanel("lb"); };
+  $("b-nav-friends").onclick = () => openPanel("friends");
+  $("b-nav-profile").onclick = () => openPanel("profile");
+  $("b-howto").onclick = () => { pendingMode = "endless"; showIntro(); };
+  $("b-ready").onclick = introReady;
+  $("b-dready").onclick = dailyReady;
+  $("b-dback").onclick = toMenu;
+  document.querySelectorAll("[data-close]").forEach((b) => b.onclick = closePanel);
+  $("t-global").onclick = () => { lbv.scope = "global"; renderBoard(); };
+  $("t-friends").onclick = () => { lbv.scope = "friends"; renderBoard(); };
+  $("t-endless").onclick = () => { lbv.mode = "endless"; renderBoard(); };
+  $("t-daily").onclick = () => { lbv.mode = "daily"; renderBoard(); };
+  $("t-all").onclick = () => { if (lbv.mode === "daily") lbv.dperiod = "today"; else lbv.period = "all"; renderBoard(); };
+  $("t-week").onclick = () => { if (lbv.mode === "daily") lbv.dperiod = "yesterday"; else lbv.period = "week"; renderBoard(); };
+
+  // invite links (?add=CODE) on the game's own site
+  try {
+    const add = new URLSearchParams(location.search).get("add");
+    if (add && /^[A-Za-z0-9]{4,8}$/.test(add)) { store.set("pendingAdd", add.toUpperCase()); history.replaceState(null, "", location.pathname); }
+  } catch (e) {}
+
+  reset(); renderMenu(); fit();
+  Board.init().then(async () => {
+    flushAnalytics();
+    const si = store.get("signingIn", null);
+    if (si) { store.set("signingIn", null); if (Board.session && Date.now() - si.at < 15 * 60 * 1000) track("sign_in", { detail: si.provider }); }
+    renderMenu(); refreshRivals();
+    if (Board.mode === "supabase" && Board.session) await afterSignIn();
+    else if (Board.mode === "supabase" && store.get("pendingAdd", null)) openPanel("friends");
+  });
+  let last = performance.now();
+  requestAnimationFrame(function frame(now) { const dt = Math.min(0.033, (now - last) / 1000); last = now; update(dt); draw(); requestAnimationFrame(frame); });
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+</script>
+</body>
+</html>

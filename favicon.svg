@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+<pattern id="tw" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)">
+  <rect width="8" height="8" fill="#1f3559"/>
+  <rect width="8" height="3" fill="#24406a"/>
+  <rect y="5" width="8" height="1" fill="#1a2d4c"/>
+</pattern>
+    <linearGradient id="steel" x1="0" x2="1"><stop offset="0" stop-color="#e8edf3"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#9aa6b6"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#tw)"/>
+  
+  <path d="M 19.2 61.44 C 16.64 47.36, 35.84 44.800000000000004, 32 32" fill="none" stroke="#f39a1d" stroke-width="3.52" stroke-linecap="round"/>
+  <circle cx="47.36" cy="19.2" r="5.76" fill="#d9483b"/>
+  <circle cx="45.44" cy="17.28" r="1.92" fill="#fff" opacity=".55"/>
+  <g transform="translate(33.28 25.6) rotate(12)">
+    <path d="M 0 19.2 C 2.688 19.2, 2.688 12.8, 1.92 0 L 0 -10.24 L -1.92 0 C -2.688 12.8, -2.688 19.2, 0 19.2 Z" fill="url(#steel)" stroke="#17233b" stroke-width="0.8959999999999999"/>
+    <ellipse cx="0" cy="14.72" rx="0.768" ry="2.56" fill="#17233b"/>
+  </g>
+</svg>

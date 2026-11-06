@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · By a Thread</title>
+<meta name="description" content="How By a Thread handles your data.">
+<meta name="theme-color" content="#1f3559">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://byathread.app/privacy">
+<style>
+@font-face { font-family: "Bungee"; src: url(/fonts/bungee.woff2) format("woff2"); font-display: swap; }
+@font-face { font-family: "DM Sans"; src: url(/fonts/dmsans.woff2) format("woff2"); font-weight: 100 1000; font-display: swap; }
+:root { --denim: #1f3559; --thread: #f39a1d; --patch: #f6efe2; --ink: #17233b; --muted: #5d6b86; --line: #c9b9a0; color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--denim); font: 500 16px/1.6 "DM Sans", system-ui, sans-serif; color: var(--ink); padding: 24px 16px 48px; }
+main { max-width: 720px; margin: 0 auto; background: var(--patch); border-radius: 18px; padding: 28px 24px 32px; outline: 3px dashed var(--thread); outline-offset: -10px; }
+.back { display: inline-block; margin-bottom: 14px; color: var(--muted); font-weight: 700; text-decoration: none; }
+h1 { font: 30px/1.1 "Bungee", "Arial Black", sans-serif; margin: 0 0 4px; }
+h2 { font-size: 19px; margin: 28px 0 6px; }
+.upd { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+a { color: #1d5bb8; }
+li { margin: 4px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.box { background: #fff8e6; border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="/">← Back to the game</a>
+
+<h1>Privacy</h1>
+<p class="upd">Last updated 6 November 2026</p>
+<p class="box">Short version: you can play without an account and without giving us anything. If you sign in, we keep your display name, scores and friends so the leaderboards work. We never sell data and there are no advertising trackers.</p>
+
+<h2>Who is responsible</h2>
+<p>By a Thread is run by Gonçalo Cotrim, an individual based in Portugal, who is the data controller. Contact: <a href="mailto:hello@byathread.app">hello@byathread.app</a>.</p>
+
+<h2>What we collect, and why</h2>
+<table>
+<tr><th>Data</th><th>Why</th><th>Legal basis</th></tr>
+<tr><td><b>Playing without an account:</b> your best scores, settings and colour, stored only in your browser (local storage).</td><td>So the game remembers you on this device. It never leaves your device.</td><td>Necessary to provide the game</td></tr>
+<tr><td><b>Anonymous gameplay stats:</b> a random ID made on your device (renewed yearly), plus events such as game start, score, run length, close calls, how a run ended, shares and ads shown.</td><td>To see whether the game is fun and fair (for example, how long runs last). No name, email, account or IP address is stored with them. You can switch this off in Profile.</td><td>Legitimate interest, with an opt-out</td></tr>
+<tr><td><b>If you sign in with Google or Facebook:</b> the account ID and email address your provider sends us, the display name and colour you choose, your runs (score, distance, close calls, duration, date), your friend code and your friends list.</td><td>To run the global, daily and friends leaderboards and your profile. Other players see only your display name, colour and scores.</td><td>Performing our agreement with you (the Terms)</td></tr>
+</table>
+<p>We don't use cookies for tracking. Signing in keeps a login token in your browser's local storage so you stay signed in.</p>
+
+<h2>Who processes it for us</h2>
+<ul>
+<li><b>Supabase</b> stores the database and handles sign-in. Its servers are in Paris, in the EU.</li>
+<li><b>Cloudflare</b> hosts the website. Like any web host, it sees your IP address to deliver the pages.</li>
+<li><b>jsDelivr</b> serves the code library the game uses to reach the database.</li>
+<li><b>Google</b> or <b>Meta (Facebook)</b> confirm who you are, only if you choose to sign in with them.</li>
+</ul>
+<p>Some of these companies may process data outside the EU under the European Commission's standard contractual clauses or the EU–US Data Privacy Framework.</p>
+
+<h2>How long we keep it</h2>
+<ul>
+<li>Account data: until you delete your account.</li>
+<li>Anonymous gameplay stats: 13 months, then deleted automatically.</li>
+<li>Data in your browser stays until you clear it.</li>
+</ul>
+
+<h2>Ads</h2>
+<p>The game does not show third-party ads yet. If we add an ad network, we'll update this page and ask for consent where the law requires it before any ad tracking happens.</p>
+
+<h2>Your rights</h2>
+<p>You can ask to see, correct, export or delete your data, object to the anonymous stats, or restrict processing. Email <a href="mailto:hello@byathread.app">hello@byathread.app</a>. To delete everything yourself straight away, see <a href="/delete-data">Delete your data</a>. You can also complain to the Portuguese data protection authority, the <a href="https://www.cnpd.pt">CNPD</a>.</p>
+
+<h2>Children</h2>
+<p>The game is for a general audience. Signing in is meant for people aged 13 or over. In Portugal, consent to sign-up services counts from age 13. If you think a child under 13 has signed in, email us and we'll delete the account.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, we'll update the date at the top. If the change is important, we'll also mention it in the game.</p>
+
+</main>
+</body>
+</html>
